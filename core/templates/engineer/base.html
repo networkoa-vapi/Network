@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineer Portal - NOA ERP</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        /* Engineer specific overrides for mobile-first */
+        body { padding-bottom: 80px; }
+        .mobile-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--surface-color);
+            display: flex; justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 100;
+            border-top: 1px solid var(--border-color);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: var(--text-secondary); font-size: 12px; font-weight: 600; text-decoration: none;
+        }
+        .nav-item.active { color: var(--primary-color); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" style="background: var(--primary-color); color: white;">
+        <div class="nav-brand" style="color: white; font-size: 18px;">
+            NOA Service Pro
+        </div>
+        <div>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500;">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 600px; padding-top: 20px;">
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-weight: 500;">Welcome back, {{ user.first_name|default:user.username }}</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--primary-color); padding: 15px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}{% endblock content %}
+    </div>
+
+    <nav class="mobile-nav">
+        <a href="{% url 'engineer_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'engineer_dashboard' %}active{% endif %}">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'engineer_tickets' %}" class="nav-item {% if request.resolver_match.url_name == 'engineer_tickets' or request.resolver_match.url_name == 'engineer_ticket_update' %}active{% endif %}">
+            <span class="nav-icon">🔧</span>
+            <span>My Jobs</span>
+        </a>
+    </nav>
+</body>
+</html>

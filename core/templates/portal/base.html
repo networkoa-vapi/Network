@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NOA ERP - Customer Portal{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="/media/company_logos/noa_erp_logo.png" alt="NOA Logo" style="height: 32px; border-radius: 4px;">
+            NOA Customer Portal
+        </div>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'quotations_list' %}">Quotations</a>
+            <a href="{% url 'tickets_list' %}">Service Tickets</a>
+            <span style="color: var(--text-secondary); margin-left: 20px;">|</span>
+            <span style="font-weight: 500; color: var(--text-primary);">{{ request.user.customerprofile.business_name }}</span>
+            <a href="{% url 'portal_logout' %}" class="btn btn-secondary" style="padding: 6px 12px; margin-left: 10px;">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container" style="padding-top: 40px; padding-bottom: 60px;">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <div>
+                {% block header_actions %}{% endblock %}
+            </div>
+        </div>
+
+        <div class="alerts">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--primary-color); padding: 15px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

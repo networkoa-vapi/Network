@@ -1,0 +1,127 @@
+{% extends 'portal/base.html' %}
+{% block page_title %}Report a Service Issue{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 600px;">
+    <p style="color: var(--text-secondary); margin-top: 0; margin-bottom: 25px;">Please fill out the details below. One of our engineers will be assigned to your ticket shortly.</p>
+    
+    <form method="post" action="{% url 'create_ticket' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Brief Title</label>
+            <input type="text" name="title" class="form-control" required placeholder="e.g. AC unit in lobby not cooling">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Division</label>
+            <select name="division" id="id_division" class="form-control">
+                <option value="">-- Select Division --</option>
+                {% for div in divisions %}
+                    <option value="{{ div.id }}">{{ div.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select name="category" id="id_category" class="form-control">
+                <option value="">-- Select Category --</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Sub-Category</label>
+            <select name="subcategory" id="id_subcategory" class="form-control">
+                <option value="">-- Select Sub-Category --</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Equipment / Product (Optional)</label>
+            <select name="product" id="id_product" class="form-control">
+                <option value="">-- General Issue --</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Urgency / Priority</label>
+            <select name="priority" class="form-control" required>
+                <option value="low">Low (Standard Maintenance)</option>
+                <option value="medium" selected>Medium (Affecting Comfort)</option>
+                <option value="high">High (Major Malfunction)</option>
+                <option value="urgent">Urgent (Critical Business Outage)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Detailed Description</label>
+            <textarea name="description" class="form-control" required rows="5" placeholder="Describe the problem, when it started, and any error codes..."></textarea>
+        </div>
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Ticket</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const divisionSelect = document.getElementById('id_division');
+    const categorySelect = document.getElementById('id_category');
+    const subcategorySelect = document.getElementById('id_subcategory');
+    const productSelect = document.getElementById('id_product');
+    
+    function loadOptions(selectElement, url, placeholder) {
+        selectElement.innerHTML = '<option value="">' + placeholder + '</option>';
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(item => {
+                    if (item.value) {
+                        const option = document.createElement('option');
+                        option.value = item.value;
+                        option.text = item.display;
+                        selectElement.appendChild(option);
+                    }
+                });
+            })
+            .catch(err => console.error('Error loading options:', err));
+    }
+    
+    divisionSelect.addEventListener('change', function() {
+        const divisionId = this.value;
+        categorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+        subcategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        productSelect.innerHTML = '<option value="">-- General Issue --</option>';
+        if (divisionId) {
+            loadOptions(
+                categorySelect,
+                '/chaining/filter/core/productcategory/division/core/product/division/' + divisionId + '/',
+                '-- Select Category --'
+            );
+        }
+    });
+    
+    categorySelect.addEventListener('change', function() {
+        const categoryId = this.value;
+        subcategorySelect.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        productSelect.innerHTML = '<option value="">-- General Issue --</option>';
+        if (categoryId) {
+            loadOptions(
+                subcategorySelect,
+                '/chaining/filter/core/productsubcategory/category/core/product/category/' + categoryId + '/',
+                '-- Select Sub-Category --'
+            );
+        }
+    });
+    
+    subcategorySelect.addEventListener('change', function() {
+        const subcategoryId = this.value;
+        productSelect.innerHTML = '<option value="">-- General Issue --</option>';
+        if (subcategoryId) {
+            loadOptions(
+                productSelect,
+                '/chaining/filter/core/product/subcategory/core/product/subcategory/' + subcategoryId + '/',
+                '-- Select Product --'
+            );
+        }
+    });
+});
+</script>
+{% endblock %}

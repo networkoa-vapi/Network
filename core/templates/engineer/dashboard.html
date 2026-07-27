@@ -1,0 +1,20 @@
+{% extends 'engineer/base.html' %}
+{% block content %}
+<div class="card" style="text-align: center; padding: 2rem 1rem;">
+    <h2 style="margin-bottom: 0.5rem; color: var(--text-primary);">{{ employee.designation }}</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">EMP Code: {{ employee.employee_code }}</p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: #eff6ff; padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">{{ assigned_tickets }}</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 600;">Active Jobs</div>
+        </div>
+        <div style="background: #d1fae5; padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 2rem; font-weight: 700; color: #059669;">{{ resolved_tickets }}</div>
+            <div style="font-size: 0.875rem; color: #065F46; font-weight: 600;">Resolved Jobs</div>
+        </div>
+    </div>
+    
+    <a href="{% url 'engineer_tickets' %}" class="btn btn-primary" style="width: 100%;">View My Jobs</a>
+</div>
+{% endblock %}

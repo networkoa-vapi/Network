@@ -1,0 +1,39 @@
+{% extends 'portal/base.html' %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+    <div class="card kpi-card">
+        <div class="kpi-title">Active Service Tickets</div>
+        <div class="kpi-value" style="color: var(--primary-color);">{{ tickets_count }}</div>
+        <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">Tickets currently being worked on by our engineers.</p>
+        <a href="{% url 'tickets_list' %}" class="btn btn-primary" style="align-self: flex-start;">View Tickets</a>
+    </div>
+
+    <div class="card kpi-card">
+        <div class="kpi-title">Pending Quotations</div>
+        <div class="kpi-value" style="color: var(--success);">{{ quotes_count }}</div>
+        <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">New quotes waiting for your review and approval.</p>
+        <a href="{% url 'quotations_list' %}" class="btn btn-primary" style="background-color: var(--success); align-self: flex-start;">Review Quotes</a>
+    </div>
+    
+    <div class="card">
+        <div class="kpi-title" style="margin-bottom: 15px;">Business Profile</div>
+        <table style="width: 100%;">
+            <tr>
+                <td style="color: var(--text-secondary); font-size: 13px; padding: 8px 0; border: none;">Company Name:</td>
+                <td style="font-weight: 600; padding: 8px 0; border: none;">{{ profile.business_name }}</td>
+            </tr>
+            <tr>
+                <td style="color: var(--text-secondary); font-size: 13px; padding: 8px 0; border: none;">GST Number:</td>
+                <td style="padding: 8px 0; border: none;">{{ profile.gst_number|default:"Not Provided" }}</td>
+            </tr>
+            <tr>
+                <td style="color: var(--text-secondary); font-size: 13px; padding: 8px 0; border: none;">Address:</td>
+                <td style="padding: 8px 0; border: none;">{{ profile.address|default:"Not Provided" }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+{% endblock %}

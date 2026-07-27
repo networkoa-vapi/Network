@@ -1,0 +1,63 @@
+{% extends 'portal/base.html' %}
+{% block page_title %}My Quotations{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom: 20px;">
+    <p style="color: var(--text-secondary); margin: 0;">Below are the official quotations sent by our team. You can review the details and accept the quotes directly from here.</p>
+</div>
+
+{% if quotes %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Quote ID</th>
+                <th>Products</th>
+                <th>Final Price (₹)</th>
+                <th>Date Sent</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for quote in quotes %}
+            <tr>
+                <td style="font-weight: 600;">#{{ quote.quotation_number }}</td>
+                <td>
+                    {% for item in quote.items.all %}
+                        {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        N/A
+                    {% endfor %}
+                </td>
+                <td style="font-weight: 700;">₹{{ quote.get_final_total }}</td>
+                <td>{{ quote.created_at|date:"M d, Y" }}</td>
+                <td>
+                    {% if quote.status == 'sent' %}
+                        <span class="badge badge-warning">Pending</span>
+                    {% elif quote.status == 'accepted' %}
+                        <span class="badge badge-success">Accepted</span>
+                    {% else %}
+                        <span class="badge badge-neutral">{{ quote.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if quote.status == 'sent' %}
+                    <form method="post" action="{% url 'accept_quotation' quote.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; background-color: var(--success);" onclick="return confirm('Are you sure you want to officially accept this quote?');">Accept Quote</button>
+                    </form>
+                    {% else %}
+                        <span style="color: var(--text-secondary); font-size: 13px;">No action required</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+    <p>You have no pending or past quotations at this time.</p>
+</div>
+{% endif %}
+{% endblock %}

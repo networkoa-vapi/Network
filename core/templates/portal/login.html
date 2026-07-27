@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOA ERP - Secure Login</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div class="login-logo" style="background: white; padding: 10px;">
+            <img src="/media/company_logos/noa_erp_logo.png" alt="NOA" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <h2 class="login-title">Welcome Back</h2>
+        <p class="login-subtitle">Sign in to your NOA Portal</p>
+        
+        {% if messages %}
+            <div style="color: var(--danger); font-size: 14px; margin-bottom: 20px; font-weight: 500;">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="post" style="text-align: left;">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" required placeholder="Enter your username">
+            </div>
+            <div class="form-group" style="margin-bottom: 30px;">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">Sign In</button>
+        </form>
+    </div>
+</body>
+</html>

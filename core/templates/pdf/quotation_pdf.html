@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Quotation {{ quotation.quotation_number }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 2cm;
+            @frame header_frame {
+                -pdf-frame-content: header_content;
+                left: 50pt; width: 512pt; top: 50pt; height: 40pt;
+            }
+            @frame footer_frame {
+                -pdf-frame-content: footer_content;
+                left: 50pt; width: 512pt; top: 772pt; height: 20pt;
+            }
+        }
+        body { font-family: Helvetica, sans-serif; font-size: 10pt; color: #333333; }
+        .company-header { text-align: center; margin-bottom: 20px; }
+        .company-name { font-size: 24pt; font-weight: bold; color: #1a56db; }
+        .quote-title { text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid #333; padding-bottom: 5px;}
+        
+        .info-table { width: 100%; margin-bottom: 20px; }
+        .info-table td { padding: 5px; vertical-align: top; }
+        .col-left { width: 50%; }
+        .col-right { width: 50%; text-align: right; }
+        
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th { background-color: #f3f4f6; color: #111827; font-weight: bold; padding: 10px; text-align: left; border: 1px solid #d1d5db; }
+        .items-table td { padding: 10px; border: 1px solid #d1d5db; }
+        
+        .totals-table { width: 100%; margin-top: 10px; }
+        .totals-table td { padding: 5px; text-align: right; }
+        .total-row { font-weight: bold; font-size: 12pt; }
+        
+        .terms { margin-top: 30px; font-size: 9pt; color: #4b5563; }
+        .terms h4 { margin-bottom: 5px; color: #111827; }
+        .signature { margin-top: 50px; text-align: right; }
+    </style>
+</head>
+<body>
+
+    <div id="header_content"></div>
+    <div id="footer_content">
+        Page <pdf:pagenumber> of <pdf:pagecount>
+    </div>
+
+    <div class="company-header">
+        <div class="company-name">{{ quotation.company.name }}</div>
+        <div>{{ quotation.company.address_line_1 }}, {{ quotation.company.city }}</div>
+        <div>Email: {{ quotation.company.contact_email }} | Phone: {{ quotation.company.contact_phone }}</div>
+    </div>
+
+    <div class="quote-title">Quotation</div>
+
+    <table class="info-table">
+        <tr>
+            <td class="col-left">
+                <strong>To:</strong><br>
+                {% if quotation.customer %}
+                    {{ quotation.customer.business_name }}<br>
+                    {{ quotation.customer.billing_address|linebreaksbr }}
+                {% elif quotation.inquiry %}
+                    {{ quotation.inquiry.name }}<br>
+                    {{ quotation.inquiry.phone }}<br>
+                    {{ quotation.inquiry.email }}
+                {% endif %}
+            </td>
+            <td class="col-right">
+                <strong>Quotation No:</strong> {{ quotation.quotation_number }}<br>
+                <strong>Date:</strong> {{ quotation.created_at|date:"d M Y" }}<br>
+                <strong>Valid Until:</strong> {{ quotation.valid_until|date:"d M Y"|default:"30 Days" }}
+            </td>
+        </tr>
+    </table>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 45%;">Description</th>
+                <th style="width: 15%; text-align: right;">Qty</th>
+                <th style="width: 15%; text-align: right;">Unit Price</th>
+                <th style="width: 20%; text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in quotation.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    <strong>{{ item.product.name }}</strong><br>
+                    <span style="font-size: 8pt; color: #666;">{{ item.product.specifications|truncatechars:100 }}</span>
+                    {% if item.product.product_specific_terms %}
+                    <br><span style="font-size: 8pt; color: #1a56db;">Note: {{ item.product.product_specific_terms }}</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">{{ item.quantity }}</td>
+                <td style="text-align: right;">{{ item.unit_price }}</td>
+                <td style="text-align: right;">{{ item.get_line_total }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No items added to this quotation yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals-table">
+        <tr>
+            <td style="width: 70%;"></td>
+            <td style="width: 15%;"><strong>Subtotal:</strong></td>
+            <td style="width: 15%;">{{ quotation.get_subtotal }}</td>
+        </tr>
+        {% if quotation.admin_discount_percent > 0 %}
+        <tr>
+            <td></td>
+            <td><strong>Discount ({{ quotation.admin_discount_percent }}%):</strong></td>
+            <td style="color: red;">-{{ discount_amount|default:"Calculated" }}</td>
+        </tr>
+        {% endif %}
+        <tr class="total-row">
+            <td></td>
+            <td style="border-top: 1px solid #333; padding-top: 5px;"><strong>Final Total:</strong></td>
+            <td style="border-top: 1px solid #333; padding-top: 5px;">{{ quotation.get_final_total }}</td>
+        </tr>
+    </table>
+
+    <div class="terms">
+        <h4>Terms & Conditions</h4>
+        {{ quotation.terms_and_conditions|linebreaksbr }}
+    </div>
+
+    <div class="signature">
+        <p>For {{ quotation.company.name }}</p>
+        <br><br><br>
+        <p>_______________________<br>Authorized Signatory</p>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Tax Invoice - {{ invoice.invoice_number }}</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        .company-name { font-size: 20pt; font-weight: bold; color: #0056b3; }
+        .details-table, .items-table, .totals-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th, .items-table td, .totals-table td { border: 1px solid #ddd; padding: 8px; }
+        .items-table th { background-color: #f2f2f2; text-align: left; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .title { font-size: 16pt; font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .status { color: #d9534f; font-weight: bold; }
+        .status.paid { color: #5cb85c; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">{{ invoice.company.name }}</div>
+        <div>{{ invoice.company.contact_email }} | {{ invoice.company.contact_phone }}</div>
+    </div>
+    
+    <div class="title">TAX INVOICE</div>
+    
+    <table class="details-table">
+        <tr>
+            <td width="50%">
+                <div class="bold">Billed To:</div>
+                <div>{{ invoice.customer.business_name }}</div>
+                <div>{{ invoice.customer.user.first_name }} {{ invoice.customer.user.last_name }}</div>
+                <div>{{ invoice.customer.phone }}</div>
+            </td>
+            <td width="50%" class="text-right">
+                <div><span class="bold">Invoice #:</span> {{ invoice.invoice_number }}</div>
+                <div><span class="bold">Date:</span> {{ invoice.date }}</div>
+                <div><span class="bold">Due Date:</span> {{ invoice.due_date|default:"N/A" }}</div>
+                <div><span class="bold">Status:</span> <span class="status {{ invoice.status }}">{{ invoice.get_status_display|upper }}</span></div>
+            </td>
+        </tr>
+    </table>
+    
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Price (₹)</th>
+                <th class="text-right">Total (₹)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td class="text-right">{{ item.quantity }}</td>
+                <td class="text-right">{{ item.unit_price }}</td>
+                <td class="text-right">{{ item.get_line_total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <table class="totals-table">
+        <tr>
+            <td width="60%" style="border:none;"></td>
+            <td width="20%" class="bold text-right">Subtotal:</td>
+            <td width="20%" class="text-right">₹{{ invoice.get_subtotal }}</td>
+        </tr>
+        <tr>
+            <td style="border:none;"></td>
+            <td class="bold text-right">GST ({{ invoice.gst_percent }}%):</td>
+            <td class="text-right">₹{{ invoice.get_tax_amount|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td style="border:none;"></td>
+            <td class="bold text-right">Grand Total:</td>
+            <td class="text-right bold" style="font-size: 12pt;">₹{{ invoice.get_grand_total|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td style="border:none;"></td>
+            <td class="bold text-right">Amount Paid:</td>
+            <td class="text-right">₹{{ invoice.get_amount_paid|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td style="border:none;"></td>
+            <td class="bold text-right">Balance Due:</td>
+            <td class="text-right bold" style="color: #d9534f;">₹{{ invoice.get_balance_due|floatformat:2 }}</td>
+        </tr>
+    </table>
+    
+    <div style="margin-top: 50px; text-align: center; color: #777;">
+        <p>Thank you for your business!</p>
+        <p>Please make cheques payable to {{ invoice.company.name }}.</p>
+    </div>
+</body>
+</html>

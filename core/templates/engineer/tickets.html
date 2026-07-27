@@ -1,0 +1,35 @@
+{% extends 'engineer/base.html' %}
+{% block content %}
+<h2 style="margin-bottom: 1rem; color: var(--text-primary); font-size: 1.25rem;">My Assigned Jobs</h2>
+
+{% if not tickets %}
+    <div class="card" style="text-align: center; padding: 2rem 1rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+        <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">No active jobs!</h3>
+        <p style="color: var(--text-secondary);">You have caught up on all your assigned tickets.</p>
+    </div>
+{% endif %}
+
+{% for ticket in tickets %}
+    <a href="{% url 'engineer_ticket_update' ticket.id %}" style="text-decoration: none; color: inherit;">
+        <div class="card" style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <h3 style="font-size: 1rem; margin-right: 1rem; color: var(--primary-color);">#{{ ticket.id }} - {{ ticket.customer.business_name }}</h3>
+                <span class="badge badge-{% if ticket.status == 'open' %}danger{% elif ticket.status == 'resolved' or ticket.status == 'closed' %}neutral{% else %}warning{% endif %}">{{ ticket.get_status_display }}</span>
+            </div>
+            
+            <p style="font-size: 0.875rem; color: var(--text-primary); font-weight: 600; margin-bottom: 0.25rem;">
+                {{ ticket.product.name|default:"General Maintenance" }}
+            </p>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                {{ ticket.issue_title }}
+            </p>
+            
+            <div style="font-size: 0.75rem; color: var(--text-secondary); border-top: 1px solid var(--border-color); padding-top: 0.5rem; display: flex; justify-content: space-between;">
+                <span>Reported: {{ ticket.created_at|date:"M d, Y" }}</span>
+                <span style="color: var(--primary-color); font-weight: 600;">Update Job &rarr;</span>
+            </div>
+        </div>
+    </a>
+{% endfor %}
+{% endblock %}
