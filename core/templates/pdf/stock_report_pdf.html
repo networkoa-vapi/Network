@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Current Stock Report</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        .company-name { font-size: 20pt; font-weight: bold; color: #0056b3; }
+        .title { font-size: 15pt; font-weight: bold; margin: 15px 0 5px; text-align: center; }
+        .meta { text-align: center; color: #666; margin-bottom: 20px; font-size: 8pt; }
+        .section-title { font-size: 12pt; font-weight: bold; margin: 25px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #0056b3; color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        th, td { border: 1px solid #ddd; padding: 6px 8px; }
+        th { background-color: #f2f2f2; text-align: left; }
+        .text-right { text-align: right; }
+        .low-stock { color: #d9534f; font-weight: bold; }
+        .empty { color: #999; text-align: center; padding: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">{{ company.name }}</div>
+        <div>{{ company.contact_email }} | {{ company.contact_phone }}</div>
+    </div>
+
+    <div class="title">CURRENT STOCK REPORT{% if filtered_godown %} - {{ filtered_godown.name }}{% endif %}</div>
+    <div class="meta">Generated on {{ generated_at|date:"d M Y, h:i A" }}</div>
+
+    <div class="section-title">Company-Wide Summary (All Godowns)</div>
+    {% if summary_rows %}
+    <table>
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th class="text-right">Total Stock</th>
+                <th class="text-right">Reorder Level</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in summary_rows %}
+            <tr>
+                <td>{{ row.item.item_code }}</td>
+                <td>{{ row.item.name }}</td>
+                <td>{{ row.item.category.name }}{% if row.item.subcategory %} - {{ row.item.subcategory.name }}{% endif %}</td>
+                <td>{{ row.item.get_unit_display }}</td>
+                <td class="text-right {% if row.low_stock %}low-stock{% endif %}">{{ row.total }}</td>
+                <td class="text-right">{{ row.item.reorder_level }}</td>
+                <td class="{% if row.low_stock %}low-stock{% endif %}">{% if row.low_stock %}LOW STOCK{% else %}OK{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No active stock items found.</div>
+    {% endif %}
+
+    {% for section in godown_sections %}
+    <div class="section-title">{{ section.godown.name }} ({{ section.godown.get_godown_type_display }})</div>
+    {% if section.rows %}
+    <table>
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th class="text-right">Stock at this Godown</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in section.rows %}
+            <tr>
+                <td>{{ row.item.item_code }}</td>
+                <td>{{ row.item.name }}</td>
+                <td>{{ row.item.category.name }}{% if row.item.subcategory %} - {{ row.item.subcategory.name }}{% endif %}</td>
+                <td>{{ row.item.get_unit_display }}</td>
+                <td class="text-right {% if row.low_stock %}low-stock{% endif %}">{{ row.balance }}</td>
+                <td class="{% if row.low_stock %}low-stock{% endif %}">{% if row.low_stock %}LOW STOCK{% else %}OK{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No stock currently held at this godown.</div>
+    {% endif %}
+    {% endfor %}
+</body>
+</html>

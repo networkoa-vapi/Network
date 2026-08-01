@@ -299,61 +299,306 @@ body.login #container {
     opacity: 0.75;
 }
 
+/* Collapsible departments: only show a department's items while hovering
+   over it (or while you're currently inside that department) - otherwise
+   just the department names are listed, keeping the sidebar compact. */
+#nav-sidebar .module {
+    transition: background-color 0.15s ease;
+}
+
+#nav-sidebar .module table tbody tr {
+    display: none;
+}
+
+#nav-sidebar .module:hover table tbody tr,
+#nav-sidebar .module.current-app table tbody tr {
+    display: table-row;
+}
+
+#nav-sidebar .module caption a.section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+#nav-sidebar .module caption a.section::after {
+    content: '\25B8';
+    font-size: 10px;
+    opacity: 0.6;
+    transition: transform 0.15s ease;
+}
+
+#nav-sidebar .module:hover caption a.section::after,
+#nav-sidebar .module.current-app caption a.section::after {
+    transform: rotate(90deg);
+}
+
 /* ── Dashboard app list ─────────────────────────────────────── */
+
+/* Django's own dashboard.css hardcodes a legacy 600px-wide dashboard column
+   (from back when the dashboard was just a two-column app-list + sidebar).
+   Our dashboard has a full KPI/performance grid now - let it use the real
+   available width instead (still leaving room for the "Recent actions"
+   sidebar via .colMS's existing margin-right). */
+.dashboard #content {
+    width: auto;
+    max-width: none;
+}
 
 #content-main.app-list .module {
     box-shadow: var(--shadow-sm);
+    border-top: 3px solid var(--dept-color, var(--primary));
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+#content-main.app-list .module caption {
+    background: linear-gradient(160deg, var(--dept-tint, rgba(20, 184, 166, 0.10)), var(--body-bg, #fff) 70%);
 }
 
 #content-main.app-list .module caption a.section {
     font-weight: 700;
     font-size: 15px;
+    color: var(--dept-color, var(--primary)) !important;
+}
+
+/* Fixed identity color per department - assigned in order, never generated,
+   so each department is visually distinct and consistent everywhere it appears. */
+#content-main.app-list .app-sales { --dept-color: #3b82f6; --dept-tint: rgba(59, 130, 246, 0.12); }
+#content-main.app-list .app-project { --dept-color: #a855f7; --dept-tint: rgba(168, 85, 247, 0.12); }
+#content-main.app-list .app-service { --dept-color: #ec4899; --dept-tint: rgba(236, 72, 153, 0.12); }
+#content-main.app-list .app-store { --dept-color: #14b8a6; --dept-tint: rgba(20, 184, 166, 0.12); }
+#content-main.app-list .app-purchase { --dept-color: #f97316; --dept-tint: rgba(249, 115, 22, 0.12); }
+#content-main.app-list .app-core { --dept-color: #64748b; --dept-tint: rgba(100, 116, 139, 0.12); }
+#content-main.app-list .app-auth { --dept-color: #94a3b8; --dept-tint: rgba(148, 163, 184, 0.10); }
+
+/* Same collapse-on-hover behavior as the sidebar: the home page lists only
+   department headings; moving the mouse over a department reveals its items. */
+#content-main.app-list .module table tbody tr,
+#content-main.app-list .module table thead {
+    display: none;
+}
+
+#content-main.app-list .module:hover table tbody tr {
+    display: table-row;
+}
+
+#content-main.app-list .module caption a.section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+#content-main.app-list .module caption a.section::after {
+    content: '\25B8';
+    font-size: 12px;
+    opacity: 0.6;
+    transition: transform 0.15s ease;
+}
+
+#content-main.app-list .module:hover caption a.section::after {
+    transform: rotate(90deg);
 }
 
 /* ── KPI Dashboard ──────────────────────────────────────────── */
 
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 .kpi-card {
-    display: block;
-    background: var(--body-bg, #fff);
+    display: flex;
+    flex-direction: column;
+    background: var(--kpi-tint, var(--body-bg, #fff));
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--hairline-color);
-    padding: 20px 22px;
-    border-left: 4px solid var(--primary);
+    padding: 14px 16px;
+    border-top: 3px solid var(--primary);
     text-decoration: none !important;
-    transition: transform 0.1s ease, box-shadow 0.15s ease;
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
 }
 
 .kpi-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-md);
 }
 
+.kpi-card .kpi-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--kpi-accent, var(--primary));
+    margin-bottom: 10px;
+}
+
 .kpi-card .kpi-value {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 800;
     line-height: 1;
-    color: var(--body-fg);
-    margin-bottom: 6px;
+    color: var(--kpi-accent, var(--body-fg));
+    margin-bottom: 5px;
 }
 
 .kpi-card .kpi-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
+    color: var(--body-quiet-color);
+    line-height: 1.3;
+}
+
+.kpi-card.kpi-info {
+    border-top-color: #0891b2;
+    --kpi-accent: #0891b2;
+    --kpi-tint: linear-gradient(160deg, rgba(8, 145, 178, 0.10), var(--body-bg, #fff) 65%);
+}
+.kpi-card.kpi-warning {
+    border-top-color: #f59e0b;
+    --kpi-accent: #d97706;
+    --kpi-tint: linear-gradient(160deg, rgba(245, 158, 11, 0.12), var(--body-bg, #fff) 65%);
+}
+.kpi-card.kpi-danger {
+    border-top-color: #ef4444;
+    --kpi-accent: #dc2626;
+    --kpi-tint: linear-gradient(160deg, rgba(239, 68, 68, 0.12), var(--body-bg, #fff) 65%);
+}
+.kpi-card.kpi-success {
+    border-top-color: #10b981;
+    --kpi-accent: #059669;
+    --kpi-tint: linear-gradient(160deg, rgba(16, 185, 129, 0.12), var(--body-bg, #fff) 65%);
+}
+
+/* ── Department Performance meters ───────────────────────────
+   Each is a "ratio against a limit": a same-ramp meter (light track,
+   saturated fill, both from the one status hue) plus a text status
+   label, so severity never rides on color alone. */
+
+.perf-heading {
+    font-size: 14px;
+    font-weight: 800;
+    margin: 2px 0 10px;
+    color: var(--body-fg);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+
+.perf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.perf-card {
+    background: var(--body-bg, #fff);
+    background: linear-gradient(160deg, var(--dept-tint, rgba(100, 116, 139, 0.12)), var(--body-bg, #fff) 68%);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--hairline-color);
+    border-top: 3px solid var(--dept-color, var(--primary));
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.perf-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Fixed department identity — always present, independent of data/severity,
+   so a "No data yet" card and five same-severity cards still read as distinct. */
+.perf-dept-sales    { --dept-color: #3b82f6; --dept-tint: rgba(59, 130, 246, 0.16); }
+.perf-dept-project  { --dept-color: #a855f7; --dept-tint: rgba(168, 85, 247, 0.16); }
+.perf-dept-service  { --dept-color: #ec4899; --dept-tint: rgba(236, 72, 153, 0.16); }
+.perf-dept-store    { --dept-color: #14b8a6; --dept-tint: rgba(20, 184, 166, 0.16); }
+.perf-dept-purchase { --dept-color: #f97316; --dept-tint: rgba(249, 115, 22, 0.16); }
+
+.perf-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--dept-color, var(--primary));
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--dept-color, var(--primary)) 16%, transparent);
+    margin-bottom: 12px;
+}
+
+.perf-card-top {
+    margin-bottom: 10px;
+}
+
+.perf-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--body-quiet-color);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.perf-value {
+    display: block;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-top: 4px;
+}
+
+.perf-meter {
+    margin-bottom: 8px;
+}
+
+.perf-meter-track {
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.perf-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.perf-status {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+}
+
+.perf-detail {
+    font-size: 12px;
     color: var(--body-quiet-color);
 }
 
-.kpi-card.kpi-info { border-left-color: #0891b2; }
-.kpi-card.kpi-warning { border-left-color: #f59e0b; }
-.kpi-card.kpi-danger { border-left-color: #ef4444; }
-.kpi-card.kpi-success { border-left-color: #10b981; }
+/* Same-ramp pairs: track is a light tint of the fill's own hue, not gray. */
+.perf-track-good { background: rgba(16, 185, 129, 0.15); }
+.perf-fill-good { background: #10b981; }
+.perf-value.perf-good { color: #10b981; }
+.perf-status.perf-good { color: #059669; background: rgba(16, 185, 129, 0.16); }
+
+.perf-track-warning { background: rgba(245, 158, 11, 0.15); }
+.perf-fill-warning { background: #f59e0b; }
+.perf-value.perf-warning { color: #f59e0b; }
+.perf-status.perf-warning { color: #b45309; background: rgba(245, 158, 11, 0.18); }
+
+.perf-track-critical { background: rgba(239, 68, 68, 0.15); }
+.perf-fill-critical { background: #ef4444; }
+.perf-value.perf-critical { color: #ef4444; }
+.perf-status.perf-critical { color: #dc2626; background: rgba(239, 68, 68, 0.16); }
 
 .kpi-panel-grid {
     display: grid;

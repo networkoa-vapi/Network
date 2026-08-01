@@ -1,0 +1,98 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Stock Report | {{ site_title|default:_('NOA ERP') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:store_storestockitem_changelist' %}">{% translate 'Stock Items' %}</a>
+    &rsaquo; Stock Report
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module" style="padding: 20px 25px; max-width: 640px;">
+        <h1 style="margin-top:0;">Stock Report</h1>
+        <p class="help">Choose any filters you need, then generate a printable PDF. Leave a filter on "All" to include everything for it.</p>
+
+        <form method="get" action="{% url 'generate_pdf_stock_report' %}" target="_blank">
+            <div class="form-row">
+                <label for="id_godown">Godown</label>
+                <select name="godown" id="id_godown">
+                    <option value="">All Godowns</option>
+                    {% for g in godowns %}
+                    <option value="{{ g.pk }}">{{ g.name }} ({{ g.get_godown_type_display }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="id_category">Category</label>
+                <select name="category" id="id_category">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                    <option value="{{ c.pk }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="id_subcategory">Sub-Category</label>
+                <select name="subcategory" id="id_subcategory">
+                    <option value="">All Sub-Categories</option>
+                    {% for s in subcategories %}
+                    <option value="{{ s.pk }}" data-category="{{ s.category_id }}">{{ s.category.name }} - {{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="id_unit">Unit</label>
+                <select name="unit" id="id_unit">
+                    <option value="">All Units</option>
+                    {% for value, label in units %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row checkbox-row">
+                <input type="checkbox" name="low_stock_only" id="id_low_stock_only" value="1">
+                <label for="id_low_stock_only" style="display:inline;">Low stock items only (at or below reorder level)</label>
+            </div>
+
+            <div class="submit-row">
+                <input type="submit" value="Generate Report (PDF)" class="default">
+                <a href="{% url 'generate_pdf_stock_report' %}" target="_blank" class="button" style="margin-left: 10px;">Print Full Report (No Filters)</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var categorySelect = document.getElementById('id_category');
+    var subSelect = document.getElementById('id_subcategory');
+    var allOptionsHtml = subSelect.innerHTML;
+
+    function applyFilter() {
+        var categoryId = categorySelect.value;
+        var currentValue = subSelect.value;
+        subSelect.innerHTML = allOptionsHtml;
+        if (categoryId) {
+            Array.prototype.slice.call(subSelect.options).forEach(function (opt) {
+                if (opt.value !== '' && opt.getAttribute('data-category') !== categoryId) {
+                    opt.remove();
+                }
+            });
+        }
+        var stillValid = Array.prototype.some.call(subSelect.options, function (o) { return o.value === currentValue; });
+        subSelect.value = stillValid ? currentValue : '';
+    }
+
+    categorySelect.addEventListener('change', applyFilter);
+});
+</script>
+{% endblock %}

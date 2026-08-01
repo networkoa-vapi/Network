@@ -1,0 +1,27 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    {% if manage_categories_url %}
+    <li>
+        <a href="{{ manage_categories_url }}" class="button">
+            {% translate "Manage Categories" %}
+        </a>
+    </li>
+    {% endif %}
+    {% if view_transactions_url %}
+    <li>
+        <a href="{{ view_transactions_url }}" class="button">
+            {% translate "View All Transactions" %}
+        </a>
+    </li>
+    {% endif %}
+    {% if stock_report_url %}
+    <li>
+        <a href="{{ stock_report_url }}" class="button">
+            {% translate "Print Stock Report" %}
+        </a>
+    </li>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

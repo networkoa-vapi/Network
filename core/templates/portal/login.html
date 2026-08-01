@@ -1,11 +1,11 @@
-{% load static %}
+{% load static cache_bust %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NOA ERP - Secure Login</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v={% static_version 'css/styles.css' %}">
 </head>
 <body class="login-body">
     <div class="login-card">

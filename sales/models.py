@@ -1,4 +1,7 @@
-from core.models import Inquiry, Quotation, PurchaseOrder, SalesOrder as CoreSalesOrder, Invoice, CustomerProfile
+from core.models import (
+    Inquiry, Quotation, PurchaseOrder, SalesOrder as CoreSalesOrder, Invoice, CustomerProfile,
+    SalesOrderSeries as CoreSalesOrderSeries, InvoiceSeries as CoreInvoiceSeries,
+)
 
 class SalesInquiry(Inquiry):
     class Meta:
@@ -41,4 +44,18 @@ class SalesCustomerProfile(CustomerProfile):
         app_label = 'sales'
         verbose_name = 'CustomerProfile'
         verbose_name_plural = 'Customer Profiles'
+
+class SalesOrderSeries(CoreSalesOrderSeries):
+    class Meta:
+        proxy = True
+        app_label = 'sales'
+        verbose_name = 'Sales Order Series'
+        verbose_name_plural = 'Sales Order Series'
+
+class SalesInvoiceSeries(CoreInvoiceSeries):
+    class Meta:
+        proxy = True
+        app_label = 'sales'
+        verbose_name = 'Invoice Series'
+        verbose_name_plural = 'Invoice Series'
 

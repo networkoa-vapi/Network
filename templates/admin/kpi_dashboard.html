@@ -1,116 +1,100 @@
 {% load i18n static %}
 
 <div class="kpi-grid">
-    <a class="kpi-card kpi-info" href="{% url 'admin:sales_salesinquiry_changelist' %}?status__in=draft,open">
+    <a class="kpi-card kpi-info" href="{% url 'admin:sales_salesinquiry_changelist' %}">
+        <div class="kpi-badge"></div>
         <div class="kpi-value">{{ open_inquiries_count }}</div>
         <div class="kpi-label">Open Sales Inquiries</div>
     </a>
+    <a class="kpi-card kpi-info" href="{% url 'admin:sales_salesquotation_changelist' %}?status__in=draft,sent">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ pending_quotations_count }}</div>
+        <div class="kpi-label">Pending Quotations</div>
+    </a>
+    <a class="kpi-card kpi-info" href="{% url 'admin:sales_salesorder_changelist' %}">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ active_sales_orders_count }}</div>
+        <div class="kpi-label">Active Sales Orders</div>
+    </a>
     <a class="kpi-card kpi-warning" href="{% url 'admin:sales_salescustomerprofile_changelist' %}">
+        <div class="kpi-badge"></div>
         <div class="kpi-value">{{ active_customers_count }}</div>
         <div class="kpi-label">Total Customers</div>
     </a>
+    <a class="kpi-card kpi-danger" href="{% url 'admin:sales_salesinvoice_changelist' %}?status__exact=unpaid">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ overdue_invoices_count }}</div>
+        <div class="kpi-label">Overdue Invoices</div>
+    </a>
     <a class="kpi-card kpi-danger" href="{% url 'admin:service_serviceserviceticket_changelist' %}?status__in=open,assigned,in_progress">
+        <div class="kpi-badge"></div>
         <div class="kpi-value">{{ open_tickets_count }}</div>
         <div class="kpi-label">Open Support Tickets</div>
     </a>
+    <a class="kpi-card kpi-danger" href="{% url 'admin:service_serviceserviceticket_changelist' %}?priority__in=high,urgent&status__in=open,in_progress">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ urgent_tickets_count }}</div>
+        <div class="kpi-label">Urgent / Unassigned Tickets</div>
+    </a>
+    <a class="kpi-card kpi-danger" href="{% url 'admin:service_pendingcomplaints_changelist' %}">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ pending_complaints_count }}</div>
+        <div class="kpi-label">Pending Complaints</div>
+    </a>
     <a class="kpi-card kpi-success" href="{% url 'admin:service_serviceamccontract_changelist' %}?status__exact=active">
+        <div class="kpi-badge"></div>
         <div class="kpi-value">{{ active_amc_count }}</div>
         <div class="kpi-label">Active AMC Contracts</div>
     </a>
+    <a class="kpi-card kpi-warning" href="{% url 'admin:service_serviceamccontract_changelist' %}?status__exact=active">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ expiring_amc_count }}</div>
+        <div class="kpi-label">AMC Expiring (30 Days)</div>
+    </a>
+    <a class="kpi-card kpi-info" href="{% url 'admin:project_project_changelist' %}">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ active_projects_count }}</div>
+        <div class="kpi-label">Active Projects</div>
+    </a>
+    <a class="kpi-card kpi-warning" href="{% url 'admin:purchase_itemstopurchase_changelist' %}">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ items_to_purchase_count }}</div>
+        <div class="kpi-label">Items to Purchase</div>
+    </a>
+    <a class="kpi-card kpi-info" href="{% url 'admin:purchase_supplierpurchaseorder_changelist' %}">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ open_supplier_po_count }}</div>
+        <div class="kpi-label">Open Purchase Orders</div>
+    </a>
+    <a class="kpi-card kpi-danger" href="{% url 'stock_report_filters' %}">
+        <div class="kpi-badge"></div>
+        <div class="kpi-value">{{ low_stock_count }}</div>
+        <div class="kpi-label">Low Stock Items</div>
+    </a>
 </div>
 
-<div class="kpi-panel-grid">
-    <div class="kpi-panel">
-        <div class="kpi-panel-header">
-            <h3>Urgent / Unassigned Tickets</h3>
+<h2 class="perf-heading">Department Performance</h2>
+<div class="perf-grid">
+    {% for m in performance_meters %}
+    <div class="perf-card perf-dept-{{ m.dept_key }}">
+        <div class="perf-badge"></div>
+        <div class="perf-card-top">
+            <span class="perf-label">{{ m.label }}</span>
+            {% if m.pct != None %}
+            <span class="perf-value perf-{{ m.severity }}">{{ m.pct }}%</span>
+            {% endif %}
         </div>
-        <table>
-            <thead>
-                <tr><th>Ticket</th><th>Issue</th><th>Status</th><th>Priority</th></tr>
-            </thead>
-            <tbody>
-                {% for ticket in actionable_tickets %}
-                <tr>
-                    <td><a href="{% url 'admin:service_serviceserviceticket_change' ticket.id %}">#{{ ticket.id }}</a></td>
-                    <td>{{ ticket.issue_title|truncatechars:30 }}</td>
-                    <td><span class="pill pill-{% if ticket.status == 'open' %}danger{% else %}warning{% endif %}">{{ ticket.get_status_display }}</span></td>
-                    <td>{{ ticket.get_priority_display }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="4" class="kpi-empty">No urgent tickets pending.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="{% url 'admin:service_serviceserviceticket_changelist' %}" class="kpi-panel-footer">View all tickets &rarr;</a>
-    </div>
-
-    <div class="kpi-panel">
-        <div class="kpi-panel-header">
-            <h3>Expiring AMC Contracts (30 Days)</h3>
+        {% if m.pct != None %}
+        <div class="perf-meter">
+            <div class="perf-meter-track perf-track-{{ m.severity }}">
+                <div class="perf-meter-fill perf-fill-{{ m.severity }}" style="width: {{ m.pct }}%;"></div>
+            </div>
         </div>
-        <table>
-            <thead>
-                <tr><th>Contract</th><th>Customer</th><th>End Date</th></tr>
-            </thead>
-            <tbody>
-                {% for contract in expiring_contracts %}
-                <tr>
-                    <td><a href="{% url 'admin:service_serviceamccontract_change' contract.id %}">{{ contract.serial_number }}</a></td>
-                    <td>{{ contract.customer.business_name|truncatechars:25 }}</td>
-                    <td class="kpi-danger-text">{{ contract.end_date|date:"d M Y" }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="3" class="kpi-empty">No contracts expiring soon.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="{% url 'admin:service_serviceamccontract_changelist' %}" class="kpi-panel-footer">View all AMC contracts &rarr;</a>
-    </div>
-
-    <div class="kpi-panel">
-        <div class="kpi-panel-header">
-            <h3>Overdue Invoices</h3>
+        <div class="perf-status perf-{{ m.severity }}">
+            {% if m.severity == 'good' %}&#10003; Healthy{% elif m.severity == 'warning' %}&#9888; Needs Attention{% else %}&#10007; Critical{% endif %}
         </div>
-        <table>
-            <thead>
-                <tr><th>Invoice #</th><th>Customer</th><th>Due Date</th></tr>
-            </thead>
-            <tbody>
-                {% for invoice in overdue_invoices %}
-                <tr>
-                    <td><a href="{% url 'admin:sales_salesinvoice_change' invoice.id %}">{{ invoice.invoice_number }}</a></td>
-                    <td>{{ invoice.customer.business_name|truncatechars:25 }}</td>
-                    <td class="kpi-danger-text">{{ invoice.due_date|date:"d M Y" }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="3" class="kpi-empty">No overdue invoices.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="{% url 'admin:sales_salesinvoice_changelist' %}" class="kpi-panel-footer">View all invoices &rarr;</a>
+        {% endif %}
+        <div class="perf-detail">{{ m.detail }}</div>
     </div>
-
-    <div class="kpi-panel">
-        <div class="kpi-panel-header">
-            <h3>Recent Pending Inquiries</h3>
-        </div>
-        <table>
-            <thead>
-                <tr><th>ID</th><th>Name</th><th>Status</th><th>Date</th></tr>
-            </thead>
-            <tbody>
-                {% for inquiry in pending_inquiries %}
-                <tr>
-                    <td><a href="{% url 'admin:sales_salesinquiry_change' inquiry.id %}">INQ-{{ inquiry.id }}</a></td>
-                    <td>{{ inquiry.name }}</td>
-                    <td><span class="pill pill-info">{{ inquiry.get_status_display }}</span></td>
-                    <td>{{ inquiry.created_at|date:"d M" }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="4" class="kpi-empty">No pending inquiries.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="{% url 'admin:sales_salesinquiry_changelist' %}" class="kpi-panel-footer">View all inquiries &rarr;</a>
-    </div>
+    {% endfor %}
 </div>

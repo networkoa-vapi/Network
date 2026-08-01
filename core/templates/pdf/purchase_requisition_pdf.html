@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Purchase Requisition - {{ pr.pr_number }}</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        .company-name { font-size: 20pt; font-weight: bold; color: #0056b3; }
+        .title { font-size: 16pt; font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .meta { text-align: center; color: #666; margin-bottom: 20px; font-size: 8pt; }
+        .details-table, .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th, .items-table td, .details-table td { border: 1px solid #ddd; padding: 8px; }
+        .items-table th { background-color: #f2f2f2; text-align: left; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .shortfall { color: #d9534f; font-weight: bold; }
+        .in-stock { color: #5cb85c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">{{ company.name }}</div>
+        <div>{{ company.contact_email }} | {{ company.contact_phone }}</div>
+    </div>
+
+    <div class="title">PURCHASE REQUISITION</div>
+    <div class="meta">Generated on {{ generated_at|date:"d M Y, h:i A" }}</div>
+
+    <table class="details-table">
+        <tr>
+            <td width="50%">
+                <div class="bold">Project:</div>
+                <div>{{ pr.project.project_number }}</div>
+                <div>{{ pr.project.customer.business_name }}</div>
+                {% if pr.project.sales_order %}<div>Sales Order: {{ pr.project.sales_order.sales_order_number }}</div>{% endif %}
+            </td>
+            <td width="50%" class="text-right">
+                <div><span class="bold">PR #:</span> {{ pr.pr_number }}</div>
+                <div><span class="bold">Date:</span> {{ pr.created_at|date:"d M Y" }}</div>
+                <div><span class="bold">Status:</span> {{ pr.get_status_display }}</div>
+                <div><span class="bold">Requested By:</span> {{ pr.requested_by|default:"-" }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th class="text-right">Qty Required</th>
+                <th class="text-right">Current Stock</th>
+                <th class="text-right">Shortfall</th>
+                <th class="text-right">MSL</th>
+                <th class="text-right">To Purchase</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in pr.items.all %}
+            <tr>
+                <td>{{ item.stock_item.item_code }}</td>
+                <td>{{ item.stock_item.name }}</td>
+                <td>{{ item.stock_item.category.name }}</td>
+                <td class="text-right">{{ item.quantity }} {{ item.stock_item.get_unit_display }}</td>
+                <td class="text-right">{{ item.get_current_stock }} {{ item.stock_item.get_unit_display }}</td>
+                <td class="text-right {% if item.is_shortfall %}shortfall{% endif %}">
+                    {% if item.is_shortfall %}{{ item.shortfall_qty }}{% else %}-{% endif %}
+                </td>
+                <td class="text-right">
+                    {% if item.is_shortfall %}{{ item.stock_item.reorder_level }}{% else %}-{% endif %}
+                </td>
+                <td class="text-right {% if item.is_shortfall %}shortfall{% endif %}">
+                    {% if item.is_shortfall %}{{ item.recommended_purchase_qty }}{% else %}-{% endif %}
+                </td>
+                <td class="{% if item.is_shortfall %}shortfall{% else %}in-stock{% endif %}">
+                    {% if item.is_shortfall %}NEEDS PURCHASE{% else %}IN STOCK{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" style="text-align:center; color:#999;">No items on this requisition.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p style="font-size: 8pt; color: #777; margin-top: -10px;">MSL = Minimum Stock Level. "To Purchase" tops up to MSL on top of covering the shortfall, so stock doesn't immediately run low again after fulfilling this requisition.</p>
+
+    {% if pr.remarks %}
+    <div style="margin-top: 15px;">
+        <div class="bold">Remarks:</div>
+        <div>{{ pr.remarks }}</div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 50px; text-align: center; color: #777;">
+        <p>{{ company.name }}</p>
+    </div>
+</body>
+</html>

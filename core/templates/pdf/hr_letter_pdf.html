@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ letter_title }} - {{ employee.employee_code }}</title>
+    <style>
+        @page { size: A4; margin: 2.5cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        .company-name { font-size: 20pt; font-weight: bold; color: #0056b3; }
+        .company-meta { font-size: 8pt; color: #666; }
+        .letter-date { margin-bottom: 20px; }
+        .title { font-size: 14pt; font-weight: bold; text-align: center; text-decoration: underline; margin: 20px 0; }
+        .addressee { margin-bottom: 20px; }
+        .body-text p { margin-bottom: 14px; text-align: justify; }
+        .bold { font-weight: bold; }
+        .signature { margin-top: 60px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">{{ company.name }}</div>
+        <div class="company-meta">
+            {{ company.address_line_1 }}{% if company.city %}, {{ company.city }}{% endif %}{% if company.state %}, {{ company.state }}{% endif %}
+        </div>
+        <div class="company-meta">{{ company.contact_email }} | {{ company.contact_phone }}</div>
+    </div>
+
+    <div class="letter-date">Date: {{ generated_at|date:"d M Y" }}</div>
+
+    <div class="addressee">
+        <div class="bold">To,</div>
+        <div>{{ employee.user.get_full_name|default:employee.user.username }}</div>
+        <div>Employee Code: {{ employee.employee_code }}</div>
+        {% if employee.present_address %}<div>{{ employee.present_address }}</div>{% endif %}
+    </div>
+
+    <div class="title">{{ letter_title }}</div>
+
+    <div class="body-text">
+        {% if letter_type == 'offer' %}
+        <p>Dear {{ employee.user.get_full_name|default:employee.user.username }},</p>
+        <p>We are pleased to offer you the position of <span class="bold">{{ employee.designation }}</span> in the
+        <span class="bold">{{ employee.department }}</span> department at {{ company.name }}, with an effective
+        date of joining on <span class="bold">{{ employee.date_of_joining|date:"d M Y" }}</span>.</p>
+        <p>We look forward to a mutually rewarding association. Detailed terms of employment, compensation, and
+        company policies will be shared separately and form part of this offer.</p>
+        <p>Please sign and return a copy of this letter as a token of your acceptance.</p>
+
+        {% elif letter_type == 'experience' %}
+        <p>This is to certify that <span class="bold">{{ employee.user.get_full_name|default:employee.user.username }}</span>
+        (Employee Code: {{ employee.employee_code }}) has been / was associated with {{ company.name }} as
+        <span class="bold">{{ employee.designation }}</span> in the <span class="bold">{{ employee.department }}</span>
+        department, from <span class="bold">{{ employee.date_of_joining|date:"d M Y" }}</span> to
+        <span class="bold">{{ generated_at|date:"d M Y" }}</span>.</p>
+        <p>During this period, we found {{ employee.user.first_name|default:"them" }} to be sincere, hardworking,
+        and professional in their conduct. We wish {{ employee.user.first_name|default:"them" }} success in all
+        future endeavours.</p>
+
+        {% elif letter_type == 'termination' %}
+        <p>Dear {{ employee.user.get_full_name|default:employee.user.username }},</p>
+        <p>This letter is to formally notify you that your employment with {{ company.name }} as
+        <span class="bold">{{ employee.designation }}</span> in the <span class="bold">{{ employee.department }}</span>
+        department stands terminated with effect from <span class="bold">{{ generated_at|date:"d M Y" }}</span>.</p>
+        <p>You are requested to complete all handover formalities and settle any outstanding company property or
+        dues prior to your last working day. Full and final settlement will be processed as per company policy.</p>
+        {% endif %}
+    </div>
+
+    <div class="signature">
+        <div>For {{ company.name }},</div>
+        <div style="margin-top: 40px;">Authorized Signatory</div>
+    </div>
+</body>
+</html>

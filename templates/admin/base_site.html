@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load static %}
+{% load static cache_bust %}
 
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('NOA ERP') }}{% endblock %}
 
@@ -17,7 +17,7 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'custom_admin.css' %}">
+<link rel="stylesheet" href="{% static 'custom_admin.css' %}?v={% static_version 'custom_admin.css' %}">
 {% endblock %}
 
 {% block nav-global %}{% endblock %}

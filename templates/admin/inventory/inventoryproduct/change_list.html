@@ -1,0 +1,18 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    {% if manage_divisions_url %}
+    <li><a href="{{ manage_divisions_url }}" class="button">{% translate "Divisions" %}</a></li>
+    {% endif %}
+    {% if manage_product_categories_url %}
+    <li><a href="{{ manage_product_categories_url }}" class="button">{% translate "Product Categories" %}</a></li>
+    {% endif %}
+    {% if manage_product_subcategories_url %}
+    <li><a href="{{ manage_product_subcategories_url }}" class="button">{% translate "Sub-Categories" %}</a></li>
+    {% endif %}
+    {% if manage_product_documents_url %}
+    <li><a href="{{ manage_product_documents_url }}" class="button">{% translate "Documents" %}</a></li>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

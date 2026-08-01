@@ -1,0 +1,13 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    {% if format_management_url %}
+    <li>
+        <a href="{{ format_management_url }}" class="button">
+            {% translate "Sales Order Format Management" %}
+        </a>
+    </li>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}
