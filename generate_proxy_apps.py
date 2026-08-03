@@ -12,7 +12,7 @@ apps = {
         }
     },
     "service": {
-        "verbose_name": "Service Hub",
+        "verbose_name": "Service Department",
         "models": {
             "ServiceTicket": ("ServiceTicketAdmin", "Service Tickets"),
             "AMCContract": ("AMCContractAdmin", "AMC Contracts"),

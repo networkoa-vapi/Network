@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal, ROUND_HALF_UP
 from smart_selects.db_fields import ChainedForeignKey
 from datetime import timedelta
 
@@ -212,6 +214,42 @@ def get_default_company():
     return Company.objects.order_by('pk').values_list('pk', flat=True).first()
 
 
+def amount_to_words_inr(amount):
+    """Rupee amount -> words, Indian numbering system (Lakh/Crore) - e.g. 15000 -> 'Fifteen Thousand'."""
+    amount = int(amount)
+    if amount == 0:
+        return "Zero"
+    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+            "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+
+    def two_digit(n):
+        if n < 20:
+            return ones[n]
+        return (tens[n // 10] + (" " + ones[n % 10] if n % 10 else "")).strip()
+
+    def three_digit(n):
+        if n >= 100:
+            return ones[n // 100] + " Hundred" + (" " + two_digit(n % 100) if n % 100 else "")
+        return two_digit(n)
+
+    crore, amount = divmod(amount, 10000000)
+    lakh, amount = divmod(amount, 100000)
+    thousand, hundred = divmod(amount, 1000)
+
+    parts = []
+    if crore:
+        parts.append(three_digit(crore) + " Crore")
+    if lakh:
+        parts.append(three_digit(lakh) + " Lakh")
+    if thousand:
+        parts.append(three_digit(thousand) + " Thousand")
+    if hundred:
+        parts.append(three_digit(hundred))
+    return " ".join(parts)
+
+
 class User(AbstractUser):
     """Custom User model separating roles within NOA ERP"""
     company = models.ForeignKey(
@@ -258,6 +296,19 @@ class Employee(models.Model):
     # Personal & Contact Details
     contact_number = models.CharField(max_length=20)
     emergency_contact = models.CharField(max_length=20, blank=True, null=True)
+
+    # CRM Communication & Printing Preferences - each user's own settings, used
+    # wherever the CRM sends something (email/WhatsApp) or prints something on their behalf.
+    whatsapp_number = models.CharField(
+        max_length=20, blank=True,
+        help_text="This user's own WhatsApp number, include country code e.g. +919876543210. "
+                   "Used to identify/contact this user from within the CRM (WhatsApp itself always sends from whichever device/account is logged in)."
+    )
+    preferred_printer = models.CharField(
+        max_length=150, blank=True,
+        help_text="Reference note only (e.g. 'HP LaserJet - Front Desk'). Browsers don't allow a webpage to silently pick a printer - "
+                   "when this user clicks Print, their browser's own print dialog opens and they choose the printer there."
+    )
 
     BLOOD_GROUP_CHOICES = (
         ('A+', 'A+'), ('A-', 'A-'),
@@ -342,6 +393,157 @@ class EmployeeDocument(models.Model):
 
     def __str__(self):
         return f"{self.get_document_type_display()} - {self.employee}"
+
+
+def _current_financial_year_suffix():
+    """e.g. 'FY26-27' style suffix used across this app's numbering: '26-27' for
+    Apr 2026 - Mar 2027 (Indian financial year)."""
+    today = timezone.now().date()
+    start_yy = today.year % 100 if today.month >= 4 else (today.year - 1) % 100
+    end_yy = (start_yy + 1) % 100
+    return f"{start_yy:02d}-{end_yy:02d}"
+
+
+class OfferLetter(models.Model):
+    """Provisional Offer Letter issued to a candidate before joining - kept independent of
+    the Employee record (which normally isn't created until after they've actually joined)."""
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, default=get_default_company)
+    letter_number = models.CharField(max_length=50, unique=True, blank=True)
+    letter_date = models.DateField(auto_now_add=True)
+
+    TITLE_CHOICES = (('Mr.', 'Mr.'), ('Ms.', 'Ms.'), ('Mrs.', 'Mrs.'))
+    candidate_title = models.CharField(max_length=5, choices=TITLE_CHOICES, default='Mr.')
+    candidate_name = models.CharField(max_length=200, help_text="Full name, e.g. Aaditya Solanki")
+    candidate_address = models.TextField(blank=True)
+    candidate_email = models.EmailField(blank=True, help_text="Used to pre-fill the Email form for this letter")
+    candidate_phone = models.CharField(max_length=20, blank=True, help_text="With country code if possible, e.g. 919227711980 - used for the WhatsApp share link")
+
+    interview_date = models.DateField(null=True, blank=True, help_text="Date the candidate was interviewed")
+    interviewed_by = models.ForeignKey(
+        Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='interviews_conducted',
+        help_text="Employee who conducted the interview"
+    )
+    interview_remarks = models.TextField(blank=True, help_text="Notes/evaluation from the interview - internal use only, not printed on the letter")
+
+    designation = models.CharField(max_length=100, help_text="e.g. Trainee Project Engineer")
+    department = models.CharField(max_length=100, help_text="e.g. Project Department")
+    expected_joining_date = models.DateField(help_text="You have to join on or before this date")
+
+    monthly_remuneration = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monthly salary in Rs. - the amount in words is generated automatically")
+    conveyance_allowance = models.DecimalField(max_digits=10, decimal_places=2, default=0, blank=True, help_text="Fixed monthly petrol/conveyance reimbursement, if any")
+
+    PF_EMPLOYEE_RATE = Decimal('0.12')
+    PF_EMPLOYER_RATE = Decimal('0.12')
+    ESIC_EMPLOYEE_RATE = Decimal('0.0075')
+    ESIC_EMPLOYER_RATE = Decimal('0.0325')
+
+    pf_applicable = models.BooleanField(default=False, help_text="Tick to include Provident Fund for this offer")
+    pf_employee_contribution = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Leave blank to auto-calculate at 12% of monthly remuneration, or enter your own amount"
+    )
+    pf_employer_contribution = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Leave blank to auto-calculate at 12% of monthly remuneration, or enter your own amount"
+    )
+
+    esic_applicable = models.BooleanField(default=False, help_text="Tick to include ESIC for this offer (statutory if gross wage is Rs 21,000 or below)")
+    esic_employee_contribution = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Leave blank to auto-calculate at 0.75% of monthly remuneration, or enter your own amount"
+    )
+    esic_employer_contribution = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Leave blank to auto-calculate at 3.25% of monthly remuneration, or enter your own amount"
+    )
+
+    employee = models.ForeignKey(
+        Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='offer_letters',
+        help_text="Link to their Employee record, once created (e.g. after they actually join)"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Offer Letter"
+        verbose_name_plural = "Offer Letters"
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.letter_number:
+            fy = _current_financial_year_suffix()
+            max_seq = 0
+            for num in OfferLetter.objects.filter(letter_number__endswith=f"/{fy}").values_list('letter_number', flat=True):
+                try:
+                    max_seq = max(max_seq, int(num.split('/')[-2]))
+                except (ValueError, IndexError):
+                    pass
+            self.letter_number = f"NOA/OFFER LETTER/{max_seq + 1:03d}/{fy}"
+
+        def _pct(rate):
+            return (self.monthly_remuneration * rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        if self.pf_applicable:
+            if self.pf_employee_contribution is None:
+                self.pf_employee_contribution = _pct(self.PF_EMPLOYEE_RATE)
+            if self.pf_employer_contribution is None:
+                self.pf_employer_contribution = _pct(self.PF_EMPLOYER_RATE)
+        if self.esic_applicable:
+            if self.esic_employee_contribution is None:
+                self.esic_employee_contribution = _pct(self.ESIC_EMPLOYEE_RATE)
+            if self.esic_employer_contribution is None:
+                self.esic_employer_contribution = _pct(self.ESIC_EMPLOYER_RATE)
+
+        super().save(*args, **kwargs)
+
+    def get_monthly_remuneration_words(self):
+        return amount_to_words_inr(self.monthly_remuneration)
+
+    @property
+    def candidate_first_name(self):
+        return self.candidate_name.split()[0] if self.candidate_name else ''
+
+    @property
+    def total_allowances(self):
+        other = self.allowances.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        return other + (self.conveyance_allowance or Decimal('0'))
+
+    @property
+    def gross_monthly_total(self):
+        return self.monthly_remuneration + self.total_allowances
+
+    def __str__(self):
+        return f"{self.letter_number} - {self.candidate_name}"
+
+
+class OfferLetterAllowance(models.Model):
+    """A named earning component on top of the base remuneration - e.g. Conveyance
+    Allowance, HRA, Special Allowance. Freely add/edit/remove per offer letter."""
+    offer_letter = models.ForeignKey(OfferLetter, on_delete=models.CASCADE, related_name='allowances')
+    name = models.CharField(max_length=100, help_text="e.g. Conveyance Allowance, HRA, Special Allowance")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monthly amount in Rs.")
+
+    class Meta:
+        verbose_name = "Allowance"
+        verbose_name_plural = "Allowances"
+
+    def __str__(self):
+        return f"{self.name}: Rs {self.amount}"
+
+
+class OfferLetterFacility(models.Model):
+    """Other facilities/perks offered - e.g. Mobile Reimbursement, Medical Insurance,
+    Leave Travel Allowance. Freely add/edit/remove per offer letter."""
+    offer_letter = models.ForeignKey(OfferLetter, on_delete=models.CASCADE, related_name='facilities')
+    name = models.CharField(max_length=150, help_text="e.g. Mobile Reimbursement, Medical Insurance")
+    description = models.CharField(max_length=255, blank=True, help_text="Optional extra detail shown on the letter")
+
+    class Meta:
+        verbose_name = "Other Facility"
+        verbose_name_plural = "Other Facilities"
+
+    def __str__(self):
+        return self.name
 
 
 class Division(models.Model):
@@ -1041,7 +1243,7 @@ class Payment(models.Model):
 
 
 # ─────────────────────────────────────────────────────────────
-# Service Hub - Equipment Registration & AMC Coverage
+# Service Department - Equipment Registration & AMC Coverage
 # ─────────────────────────────────────────────────────────────
 
 class AMCCoverageItem(models.Model):
@@ -1202,11 +1404,13 @@ class AMCContract(models.Model):
     
     pm_visits_per_year = models.PositiveIntegerField(default=3, help_text="Number of preventive maintenance visits covered")
     auto_generate_tickets = models.BooleanField(default=True, help_text="Automatically schedule PM tickets on save")
-    
+
+    coverage_items = models.ManyToManyField(AMCCoverageItem, blank=True, related_name='amc_contracts', help_text="What is covered under this AMC contract")
+
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         super().save(*args, **kwargs)
-        
+
         # Auto-generate tickets on creation if requested
         if is_new and self.auto_generate_tickets and self.pm_visits_per_year > 0:
             days_interval = 365 // self.pm_visits_per_year
@@ -1505,12 +1709,15 @@ class StockItem(models.Model):
         ('litre', 'Litre'),
         ('box', 'Box'),
         ('set', 'Set'),
-        ('meter', 'Meter'),
+        ('meter', 'Mtr'),
+        ('ft', 'Ft'),
+        ('rft', 'RFT'),
+        ('sqft', 'Sq. Ft'),
         ('pair', 'Pair'),
         ('roll', 'Roll'),
         ('other', 'Other'),
     )
-    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='nos')
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='nos', help_text="Base Stock Unit - stock balance is always maintained in this unit. Add Alternate UOMs below for items purchased/issued in a different unit (e.g. bought by weight, issued by count or length).")
 
     name = models.CharField(max_length=255)
     item_code = models.CharField(max_length=100, unique=True, help_text="Internal store code for this item")
@@ -1522,23 +1729,90 @@ class StockItem(models.Model):
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
 
+    is_serialized = models.BooleanField(default=False, help_text="Track individual serial numbers for this item (e.g. AC IDU/ODU, tools)")
+    is_returnable = models.BooleanField(default=False, help_text="Must come back to Store after being issued (e.g. Tools) - tracked on the Pending Returnable Items report")
+    is_refillable = models.BooleanField(default=False, help_text="A reusable container that gets refilled rather than consumed (e.g. gas/refrigerant cylinder)")
+    is_piece_tracked = models.BooleanField(default=False, help_text="Total stock is made up of individual pieces of different sizes (e.g. Copper Pipe: several cut lengths adding up to the total Ft in stock) - track and select by piece instead of a single bulk quantity")
+
     class Meta:
         verbose_name = "Stock Item"
         verbose_name_plural = "Stock Items"
         ordering = ['name']
 
-    def get_stock_balance(self, godown=None, exclude_pk=None):
+    def get_stock_balance(self, godown=None, exclude_pk=None, as_of=None):
+        """Running balance as of a point in time. `as_of=None` means "right now" (includes
+        every transaction on record); pass a date to get the balance as it stood at the end
+        of that day - e.g. for a report's Opening Stock (as_of = day before the period start)."""
         qs = self.transactions.all()
         if godown is not None:
             qs = qs.filter(godown=godown)
         if exclude_pk is not None:
             qs = qs.exclude(pk=exclude_pk)
+        if as_of is not None:
+            qs = qs.filter(transaction_date__lte=as_of)
         inbound = qs.filter(transaction_type__in=StockTransaction.INBOUND_TYPES).aggregate(total=models.Sum('quantity'))['total'] or 0
         outbound = qs.filter(transaction_type__in=StockTransaction.OUTBOUND_TYPES).aggregate(total=models.Sum('quantity'))['total'] or 0
         return inbound - outbound
 
     def __str__(self):
         return f"{self.item_code} - {self.name}"
+
+
+class StockItemSerial(models.Model):
+    """One physical serialized unit of a Stock Item (e.g. one AC's IDU, one tool, one gas cylinder)."""
+    stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE, related_name='serials')
+    serial_number = models.CharField(max_length=100)
+    godown = models.ForeignKey(Godown, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_serials', help_text="Current / last known location")
+
+    STATUS_CHOICES = (
+        ('in_stock', 'In Stock'),
+        ('issued', 'Issued'),
+        ('scrapped', 'Scrapped'),
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='in_stock')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Stock Item Serial"
+        verbose_name_plural = "Stock Item Serials"
+        unique_together = ('stock_item', 'serial_number')
+        ordering = ['stock_item__name', 'serial_number']
+
+    def __str__(self):
+        return f"{self.stock_item.item_code} - {self.serial_number}"
+
+
+class StockItemPiece(models.Model):
+    """One physical piece of a bulk/continuous-measure item that's tracked piece-wise
+    (e.g. a cut length of Copper Pipe). Unlike a StockItemSerial, a piece has no unique
+    identity - just a size - and several differently-sized pieces add up to the item's
+    total stock."""
+    stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE, related_name='pieces')
+    label = models.CharField(max_length=50, blank=True, help_text="Optional reference tag (e.g. 'Roll A'). Auto-numbered if left blank.")
+    quantity = models.DecimalField(max_digits=12, decimal_places=2, help_text="Size of this piece, in the item's base Stock Unit")
+    godown = models.ForeignKey(Godown, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_pieces', help_text="Current / last known location")
+
+    STATUS_CHOICES = (
+        ('in_stock', 'In Stock'),
+        ('issued', 'Issued'),
+        ('scrapped', 'Scrapped'),
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='in_stock')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Stock Item Piece"
+        verbose_name_plural = "Stock Item Pieces"
+        ordering = ['stock_item__name', '-quantity']
+
+    def save(self, *args, **kwargs):
+        if not self.label and not self.pk:
+            count = StockItemPiece.objects.filter(stock_item=self.stock_item).count()
+            self.label = f"Piece {count + 1}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.stock_item.item_code} - {self.label} ({self.quantity} {self.stock_item.get_unit_display()})"
 
 
 class StockTransaction(models.Model):
@@ -1568,7 +1842,34 @@ class StockTransaction(models.Model):
     OUTBOUND_TYPES = ['transfer_out', 'issue', 'scrap', 'adjustment_out']
 
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
-    quantity = models.DecimalField(max_digits=12, decimal_places=2)
+    quantity = models.DecimalField(max_digits=12, decimal_places=2, help_text="In the item's base Stock Unit - the authoritative amount the stock ledger runs on.")
+    serials = models.ManyToManyField(
+        StockItemSerial, blank=True, related_name='transactions',
+        help_text="For serialized items: the specific unit(s) this transaction covers"
+    )
+    pieces = models.ManyToManyField(
+        StockItemPiece, blank=True, related_name='transactions',
+        help_text="For piece-tracked items: the specific piece(s) this transaction covers"
+    )
+    # Reference only - a second, independently-entered view of this transaction in a
+    # different unit (e.g. what was actually paid for/weighed). Neither of these feeds
+    # into any calculation; Quantity (the base Stock Unit amount) is always its own,
+    # directly-entered, authoritative number - no conversion factor is stored or derived.
+    transaction_uom = models.CharField(
+        max_length=10, choices=StockItem.UNIT_CHOICES, blank=True,
+        help_text="Reference only: also express this transaction in a different unit (e.g. what was purchased in)."
+    )
+    transaction_uom_quantity = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="Reference only: quantity in the unit above. Does not affect Quantity below."
+    )
+
+    # Reference only (e.g. on a Purchase Inward, a heads-up for whoever issues this stock
+    # later, confirming which unit Quantity below is in) - never used in stock-balance math.
+    expected_issue_uom = models.CharField(
+        max_length=10, choices=StockItem.UNIT_CHOICES, blank=True,
+        help_text="Which unit this stock is tracked/issued in (should match Quantity below)."
+    )
 
     destination_godown = models.ForeignKey(
         Godown, on_delete=models.SET_NULL, null=True, blank=True,
@@ -1612,7 +1913,11 @@ class StockTransaction(models.Model):
             raise ValidationError("Transfer Out requires a destination Sub Godown.")
         if self.transaction_type == 'return' and not self.related_transaction:
             raise ValidationError("A Return transaction must reference the original Issue voucher.")
-        if self.stock_item_id and self.godown_id and self.transaction_type in self.OUTBOUND_TYPES:
+        # For serialized/piece-tracked items, correctness is enforced structurally instead
+        # (the picker only ever offers currently-available units/pieces), so skip the
+        # quantity check - `quantity` itself is auto-derived after save from the selection.
+        if (self.stock_item_id and self.godown_id and self.transaction_type in self.OUTBOUND_TYPES
+                and not self.stock_item.is_serialized and not self.stock_item.is_piece_tracked):
             available = self.stock_item.get_stock_balance(godown=self.godown, exclude_pk=self.pk)
             if self.quantity and self.quantity > available:
                 raise ValidationError(f"Only {available} {self.stock_item.get_unit_display()} of {self.stock_item.name} available at {self.godown.name}.")
@@ -1623,9 +1928,113 @@ class StockTransaction(models.Model):
             prefix = self.VOUCHER_PREFIXES.get(self.transaction_type, 'STK')
             self.voucher_number = f"{prefix}-{uuid.uuid4().hex[:6].upper()}"
         super().save(*args, **kwargs)
+        # Wherever stock is reflected (balances, reports, pickers) it reads `quantity`
+        # alongside the item's own `unit` label - keep that label in sync with whichever
+        # unit Quantity was actually entered in (the Issue Unit), so the two never drift apart.
+        if self.expected_issue_uom and self.stock_item_id and self.stock_item.unit != self.expected_issue_uom:
+            StockItem.objects.filter(pk=self.stock_item_id).update(unit=self.expected_issue_uom)
+
+    def _sync_unit_statuses(self, units_qs):
+        """Shared status/location transition for whichever individually-tracked units
+        (serials or pieces) this transaction covers, based on its transaction_type."""
+        if self.transaction_type == 'issue':
+            units_qs.update(status='issued')
+        elif self.transaction_type in ('return', 'receipt', 'transfer_in', 'adjustment_in'):
+            units_qs.update(status='in_stock', godown=self.godown)
+        elif self.transaction_type == 'scrap':
+            units_qs.update(status='scrapped')
+        elif self.transaction_type == 'transfer_out':
+            units_qs.update(godown=self.destination_godown)
+
+    def sync_serial_statuses(self):
+        """After `serials` is set on this transaction, apply the status/location change
+        each selected unit should undergo for this transaction's type, and (for serialized
+        items) correct `quantity` to match the number of serials actually selected."""
+        self._sync_unit_statuses(self.serials.all())
+        if self.stock_item.is_serialized:
+            count = self.serials.count()
+            if count and count != self.quantity:
+                StockTransaction.objects.filter(pk=self.pk).update(quantity=count)
+
+    def sync_piece_statuses(self):
+        """After `pieces` is set on this transaction, apply the status/location change each
+        selected piece should undergo, and (for piece-tracked items) correct `quantity` to
+        match the sum of the selected pieces' individual sizes."""
+        self._sync_unit_statuses(self.pieces.all())
+        if self.stock_item.is_piece_tracked:
+            total = self.pieces.aggregate(total=models.Sum('quantity'))['total'] or 0
+            if total and total != self.quantity:
+                StockTransaction.objects.filter(pk=self.pk).update(quantity=total)
+
+    def get_returned_quantity(self):
+        return self.return_transactions.aggregate(total=models.Sum('quantity'))['total'] or 0
+
+    @property
+    def pending_return_quantity(self):
+        if self.transaction_type != 'issue':
+            return 0
+        return self.quantity - self.get_returned_quantity()
+
+    def get_pending_serials(self):
+        """Serials from this issue transaction still awaiting return - still 'issued'
+        AND this is the most recent transaction to have touched them (a serial that was
+        later re-issued after being returned stays linked to this old issue row too, so
+        recency is what tells a truly-still-out unit apart from stale transaction history)."""
+        if self.transaction_type != 'issue' or not self.stock_item.is_serialized:
+            return self.serials.none()
+        pending_ids = [
+            serial.id for serial in self.serials.filter(status='issued')
+            if serial.transactions.order_by('-id').values_list('id', flat=True).first() == self.id
+        ]
+        return self.serials.filter(id__in=pending_ids)
+
+    @property
+    def is_pending_return(self):
+        if self.transaction_type != 'issue' or not self.stock_item.is_returnable:
+            return False
+        if self.stock_item.is_serialized:
+            return self.get_pending_serials().exists()
+        return self.pending_return_quantity > 0
+
+    @property
+    def days_pending_return(self):
+        if not self.is_pending_return:
+            return None
+        return (timezone.now().date() - self.transaction_date).days
 
     def __str__(self):
         return f"{self.voucher_number} - {self.get_transaction_type_display()} - {self.stock_item.name} ({self.quantity})"
+
+
+class RefillLog(models.Model):
+    """Refill event for a reusable container (e.g. gas/refrigerant cylinder) - can also record
+    a new serial number if the vendor swaps/re-tags the bottle as part of the refill."""
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, default=get_default_company)
+    stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT, related_name='refill_logs', limit_choices_to={'is_refillable': True})
+    serial = models.ForeignKey(StockItemSerial, on_delete=models.PROTECT, related_name='refill_logs')
+    old_serial_number = models.CharField(max_length=100, editable=False, blank=True)
+    new_serial_number = models.CharField(max_length=100, blank=True, help_text="Leave blank if the serial number stays the same after refill")
+    godown = models.ForeignKey(Godown, on_delete=models.PROTECT, related_name='refill_logs')
+    refill_date = models.DateField(auto_now_add=True)
+    handled_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='refill_logs_handled')
+    remarks = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Refill Entry"
+        verbose_name_plural = "Refill Entries"
+        ordering = ['-refill_date', '-id']
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.old_serial_number = self.serial.serial_number
+        super().save(*args, **kwargs)
+        if self.new_serial_number and self.new_serial_number != self.serial.serial_number:
+            self.serial.serial_number = self.new_serial_number
+            self.serial.godown = self.godown
+            self.serial.save(update_fields=['serial_number', 'godown'])
+
+    def __str__(self):
+        return f"Refill - {self.serial} on {self.refill_date}"
 
 
 # ─────────────────────────────────────────────────────────────

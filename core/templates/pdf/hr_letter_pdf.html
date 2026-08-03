@@ -38,16 +38,7 @@
     <div class="title">{{ letter_title }}</div>
 
     <div class="body-text">
-        {% if letter_type == 'offer' %}
-        <p>Dear {{ employee.user.get_full_name|default:employee.user.username }},</p>
-        <p>We are pleased to offer you the position of <span class="bold">{{ employee.designation }}</span> in the
-        <span class="bold">{{ employee.department }}</span> department at {{ company.name }}, with an effective
-        date of joining on <span class="bold">{{ employee.date_of_joining|date:"d M Y" }}</span>.</p>
-        <p>We look forward to a mutually rewarding association. Detailed terms of employment, compensation, and
-        company policies will be shared separately and form part of this offer.</p>
-        <p>Please sign and return a copy of this letter as a token of your acceptance.</p>
-
-        {% elif letter_type == 'experience' %}
+        {% if letter_type == 'experience' %}
         <p>This is to certify that <span class="bold">{{ employee.user.get_full_name|default:employee.user.username }}</span>
         (Employee Code: {{ employee.employee_code }}) has been / was associated with {{ company.name }} as
         <span class="bold">{{ employee.designation }}</span> in the <span class="bold">{{ employee.department }}</span>

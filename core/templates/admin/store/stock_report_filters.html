@@ -19,6 +19,14 @@
 
         <form method="get" action="{% url 'generate_pdf_stock_report' %}" target="_blank">
             <div class="form-row">
+                <label>Period</label>
+                <input type="date" name="date_from" id="id_date_from">
+                <span style="margin: 0 8px;">to</span>
+                <input type="date" name="date_to" id="id_date_to">
+                <p class="help">Shows Opening / Purchased / Issued / Balance stock for this period. Leave both blank for an all-time report (Opening will show as 0).</p>
+            </div>
+
+            <div class="form-row">
                 <label for="id_godown">Godown</label>
                 <select name="godown" id="id_godown">
                     <option value="">All Godowns</option>

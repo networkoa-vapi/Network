@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Email Offer Letter | {{ site_title|default:_('NOA ERP') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:hr_hrofferletter_changelist' %}">{% translate 'Offer Letters' %}</a>
+    &rsaquo; <a href="{% url 'admin:hr_hrofferletter_change' offer.id %}">{{ offer.letter_number }}</a>
+    &rsaquo; Email
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module" style="padding: 20px 25px; max-width: 560px;">
+        <h1 style="margin-top:0;">Email Offer Letter {{ offer.letter_number }}</h1>
+        <p class="help">Sends the Offer Letter as a PDF attachment to the candidate.</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <p class="{{ message.tags }}" style="padding:10px; border-radius:4px; background:#fef2f2; color:#b91c1c;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="id_email">Recipient Email</label>
+                <input type="email" name="email" id="id_email" value="{{ default_email }}" required style="width:100%;">
+            </div>
+            <div class="form-row">
+                <label for="id_note">Message (optional)</label>
+                <textarea name="note" id="id_note" rows="4" style="width:100%;"></textarea>
+            </div>
+            <div class="submit-row">
+                <input type="submit" value="Send Email" class="default">
+                <a href="{% url 'admin:hr_hrofferletter_change' offer.id %}" class="button" style="margin-left:10px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

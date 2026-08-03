@@ -122,22 +122,49 @@ body {
     padding: 10px 24px;
 }
 
+/* The logo + wordmark keep the letterhead's own colours untouched (navy blue
+   ink on white paper) - since the header bar itself is dark, they sit on
+   their own light backing panel here instead, the same way they'd sit on
+   the letterhead's white page. */
 #site-name a {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: -0.01em;
+    background: #fff;
+    padding: 6px 16px;
+    border-radius: 10px;
+    flex-shrink: 0;
 }
 
-.brand-logo {
-    height: 34px;
-    width: 34px;
+/* Logo icon + "Network Office Automation" wordmark are both real images now
+   (noa_icon.png / noa_wordmark.png, both cropped straight from the vector
+   visiting card PDF export "Network V-C Final.pdf") instead of live CSS
+   text. Earlier attempts styled them as text with CSS fonts (Arial Black /
+   Georgia) matched to the letterhead, but the actual rendered width and
+   size of that text depends on whichever fallback font a given browser/OS
+   substitutes - this was never reliably consistent across machines and
+   repeatedly broke (mismatched widths, mismatched sizes, wrapping onto 3
+   lines). An image has no such dependency: it is pixel-identical
+   everywhere. Do not go back to rendering this as styled text - if the
+   wordmark ever needs to change, re-crop a new image from a vector source
+   (the CDR/PDF exports in "E:\Network_Tarun\Office\Visiting card\"),
+   don't recreate it with CSS fonts. */
+.brand-logo, .brand-wordmark {
+    height: 38px;
+    width: auto;
     object-fit: contain;
-    background: #fff;
-    border-radius: 8px;
-    padding: 3px;
+}
+
+.brand-suffix {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 13px;
+    color: #4c4a4f;
+    padding-left: 12px;
+    margin-left: 4px;
+    border-left: 1px solid #d1d5db;
+    white-space: nowrap;
 }
 
 #user-tools {
@@ -146,6 +173,54 @@ body {
 
 #user-tools a, #user-tools button {
     border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ── Global Reports Center bar ──────────────────────────────── */
+
+#global-reports-bar {
+    background: var(--header-bg);
+    padding: 6px 24px 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#global-reports-bar .button {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff !important;
+    padding: 6px 18px;
+    border: none;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: inherit;
+    text-decoration: none !important;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+#global-reports-bar .button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ── Printing ───────────────────────────────────────────────── */
+/* The global Print button prints whatever page is currently open (a record's
+   detail view, a changelist, a PDF) - strip the admin chrome so what comes out
+   is just the content, not the sidebar/header/buttons/filters. */
+
+@media print {
+    #header, #nav-sidebar, #global-reports-bar, div.breadcrumbs,
+    .object-tools, .submit-row, #changelist-filter, .actions,
+    #nav-sidebar-toggle, .paginator {
+        display: none !important;
+    }
+    #container, #content, #content-main {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
 }
 
 /* ── Breadcrumbs ────────────────────────────────────────────── */
@@ -280,6 +355,50 @@ body.login #container {
     font-weight: 700;
 }
 
+/* Colourful banner + bold "User Login" bar - adopted from a reference ERP
+   login screen the user shared (screenshot): a graphic banner above the
+   form, then a solid bold-coloured heading bar right before the fields.
+   Purely decorative additions around the existing, unchanged login form. */
+.login-banner {
+    background: linear-gradient(120deg, #0d9488, #0891b2 55%, #f59e0b 130%);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    border-radius: 20px 20px 0 0;
+    text-align: center;
+}
+
+.login-banner svg {
+    height: 38px;
+    width: auto;
+}
+
+.login-banner-text {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.login-heading {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 800;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 0 12px 16px;
+}
+
+.login #content-main {
+    padding-bottom: 12px;
+}
+
 /* ── Nav sidebar ────────────────────────────────────────────── */
 
 #nav-sidebar {
@@ -411,15 +530,20 @@ body.login #container {
     margin-bottom: 20px;
 }
 
+/* Bold "number over solid colour label bar" card - adopted from a reference
+   Oracle Forms ERP dashboard the user shared (screenshot), which shows each
+   KPI as a white number block sitting directly on top of a solid, fully
+   saturated colour bar carrying the label in white text - flatter and more
+   graphic than a soft gradient tint. Same underlying semantic colours
+   (info/warning/danger/success) and same HTML/data - purely a restyle. */
 .kpi-card {
     display: flex;
     flex-direction: column;
-    background: var(--kpi-tint, var(--body-bg, #fff));
-    border-radius: var(--radius-md);
+    background: var(--body-bg, #fff);
+    border-radius: 10px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--hairline-color);
-    padding: 14px 16px;
-    border-top: 3px solid var(--primary);
+    overflow: hidden;
     text-decoration: none !important;
     transition: transform 0.12s ease, box-shadow 0.15s ease;
 }
@@ -430,48 +554,33 @@ body.login #container {
 }
 
 .kpi-card .kpi-badge {
-    width: 26px;
-    height: 26px;
-    border-radius: 999px;
-    background: var(--kpi-accent, var(--primary));
-    margin-bottom: 10px;
+    display: none;
 }
 
 .kpi-card .kpi-value {
-    font-size: 26px;
+    font-size: 27px;
     font-weight: 800;
     line-height: 1;
-    color: var(--kpi-accent, var(--body-fg));
-    margin-bottom: 5px;
+    color: var(--body-loud-color, #0f172a);
+    padding: 16px 16px 10px;
 }
 
 .kpi-card .kpi-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--body-quiet-color);
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    background: var(--kpi-accent, var(--primary));
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     line-height: 1.3;
+    padding: 9px 16px;
+    margin-top: auto;
 }
 
-.kpi-card.kpi-info {
-    border-top-color: #0891b2;
-    --kpi-accent: #0891b2;
-    --kpi-tint: linear-gradient(160deg, rgba(8, 145, 178, 0.10), var(--body-bg, #fff) 65%);
-}
-.kpi-card.kpi-warning {
-    border-top-color: #f59e0b;
-    --kpi-accent: #d97706;
-    --kpi-tint: linear-gradient(160deg, rgba(245, 158, 11, 0.12), var(--body-bg, #fff) 65%);
-}
-.kpi-card.kpi-danger {
-    border-top-color: #ef4444;
-    --kpi-accent: #dc2626;
-    --kpi-tint: linear-gradient(160deg, rgba(239, 68, 68, 0.12), var(--body-bg, #fff) 65%);
-}
-.kpi-card.kpi-success {
-    border-top-color: #10b981;
-    --kpi-accent: #059669;
-    --kpi-tint: linear-gradient(160deg, rgba(16, 185, 129, 0.12), var(--body-bg, #fff) 65%);
-}
+.kpi-card.kpi-info { --kpi-accent: #2563eb; }
+.kpi-card.kpi-warning { --kpi-accent: #d97706; }
+.kpi-card.kpi-danger { --kpi-accent: #dc2626; }
+.kpi-card.kpi-success { --kpi-accent: #059669; }
 
 /* ── Department Performance meters ───────────────────────────
    Each is a "ratio against a limit": a same-ramp meter (light track,
@@ -479,13 +588,16 @@ body.login #container {
    label, so severity never rides on color alone. */
 
 .perf-heading {
-    font-size: 14px;
+    display: inline-block;
+    font-size: 13px;
     font-weight: 800;
-    margin: 2px 0 10px;
-    color: var(--body-fg);
+    margin: 2px 0 12px;
+    color: #fff;
+    background: var(--primary);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.75;
+    letter-spacing: 0.05em;
+    padding: 8px 16px;
+    border-radius: 6px;
 }
 
 .perf-grid {
@@ -497,12 +609,9 @@ body.login #container {
 
 .perf-card {
     background: var(--body-bg, #fff);
-    background: linear-gradient(160deg, var(--dept-tint, rgba(100, 116, 139, 0.12)), var(--body-bg, #fff) 68%);
-    border-radius: var(--radius-md);
+    border-radius: 10px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--hairline-color);
-    border-top: 3px solid var(--dept-color, var(--primary));
-    padding: 14px 16px;
     position: relative;
     overflow: hidden;
     transition: transform 0.12s ease, box-shadow 0.15s ease;
@@ -513,34 +622,42 @@ body.login #container {
     box-shadow: var(--shadow-md);
 }
 
+.perf-meter, .perf-detail {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+.perf-status {
+    margin-left: 16px;
+}
+.perf-detail {
+    padding-bottom: 14px;
+}
+
 /* Fixed department identity — always present, independent of data/severity,
    so a "No data yet" card and five same-severity cards still read as distinct. */
-.perf-dept-sales    { --dept-color: #3b82f6; --dept-tint: rgba(59, 130, 246, 0.16); }
-.perf-dept-project  { --dept-color: #a855f7; --dept-tint: rgba(168, 85, 247, 0.16); }
-.perf-dept-service  { --dept-color: #ec4899; --dept-tint: rgba(236, 72, 153, 0.16); }
-.perf-dept-store    { --dept-color: #14b8a6; --dept-tint: rgba(20, 184, 166, 0.16); }
-.perf-dept-purchase { --dept-color: #f97316; --dept-tint: rgba(249, 115, 22, 0.16); }
+.perf-dept-sales    { --dept-color: #3b82f6; }
+.perf-dept-project  { --dept-color: #a855f7; }
+.perf-dept-service  { --dept-color: #ec4899; }
+.perf-dept-store    { --dept-color: #14b8a6; }
+.perf-dept-purchase { --dept-color: #f97316; }
 
 .perf-badge {
-    width: 30px;
-    height: 30px;
-    border-radius: 999px;
-    background: var(--dept-color, var(--primary));
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--dept-color, var(--primary)) 16%, transparent);
-    margin-bottom: 12px;
+    display: none;
 }
 
 .perf-card-top {
-    margin-bottom: 10px;
+    background: var(--dept-color, var(--primary));
+    padding: 10px 16px;
+    margin-bottom: 12px;
 }
 
 .perf-label {
     display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--body-quiet-color);
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -548,10 +665,11 @@ body.login #container {
 
 .perf-value {
     display: block;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 800;
     line-height: 1.2;
-    margin-top: 4px;
+    margin-top: 2px;
+    color: #fff !important;
 }
 
 .perf-meter {
@@ -599,6 +717,95 @@ body.login #container {
 .perf-fill-critical { background: #ef4444; }
 .perf-value.perf-critical { color: #ef4444; }
 .perf-status.perf-critical { color: #dc2626; background: rgba(239, 68, 68, 0.16); }
+
+/* ── Graphical Comparison (dropdown-switchable bar chart) ─────
+   Adopted from a reference ERP dashboard the user shared: a "Choose
+   Method" style selector that swaps which metric a horizontal bar chart
+   shows. All datasets are pre-rendered server-side; the dropdown just
+   toggles visibility client-side (see kpi_dashboard.html) - no new data
+   fetch, so it can't show stale numbers. */
+.compare-panel {
+    background: var(--body-bg, #fff);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--hairline-color);
+    padding: 16px 20px 20px;
+    margin-bottom: 20px;
+}
+
+.compare-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.compare-header-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--body-quiet-color);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.compare-select {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--hairline-color);
+    background: var(--darkened-bg);
+    color: var(--body-fg);
+}
+
+.compare-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 56px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.compare-row:last-child {
+    margin-bottom: 0;
+}
+
+.compare-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--body-fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.compare-track {
+    height: 16px;
+    border-radius: 999px;
+    background: var(--darkened-bg);
+    overflow: hidden;
+}
+
+.compare-fill {
+    height: 100%;
+    border-radius: 999px;
+    min-width: 3px;
+    transition: width 0.4s ease;
+}
+
+.compare-value {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--body-fg);
+    text-align: right;
+}
+
+@media (max-width: 600px) {
+    .compare-row {
+        grid-template-columns: 100px 1fr 40px;
+    }
+}
 
 .kpi-panel-grid {
     display: grid;

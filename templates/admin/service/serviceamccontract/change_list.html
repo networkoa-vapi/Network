@@ -2,13 +2,6 @@
 {% load i18n %}
 
 {% block object-tools-items %}
-    {% if equipment_report_url %}
-    <li>
-        <a href="{{ equipment_report_url }}" class="button" target="_blank" rel="noopener">
-            {% translate "Print Equipment Report (All)" %}
-        </a>
-    </li>
-    {% endif %}
     {% if manage_coverage_items_url %}
     <li>
         <a href="{{ manage_coverage_items_url }}" class="button">

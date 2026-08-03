@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ report_label }} Report</title>
+    <style>
+        @page { size: A4 landscape; margin: 1.5cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; }
+        .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        .company-name { font-size: 18pt; font-weight: bold; color: #0056b3; }
+        .title { font-size: 14pt; font-weight: bold; margin: 10px 0 4px; text-align: center; }
+        .meta { text-align: center; color: #666; margin-bottom: 15px; font-size: 8pt; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 5px 7px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) td { background-color: #fafafa; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">{{ company.name }}</div>
+        <div>{{ company.contact_email }} | {{ company.contact_phone }}</div>
+    </div>
+
+    <div class="title">{{ department }} - {{ report_label }}</div>
+    <div class="meta">
+        Period: {{ date_range_label }} | Generated on {{ generated_at|date:"d M Y, h:i A" }} | {{ rows|length }} record(s)
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                {% for h in headers %}<th>{{ h }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for cell in row %}<td>{{ cell|default:"-" }}</td>{% endfor %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="{{ headers|length }}" style="text-align:center; color:#999;">No records found for this selection.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

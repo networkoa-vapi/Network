@@ -98,3 +98,39 @@
     </div>
     {% endfor %}
 </div>
+
+<h2 class="perf-heading">Graphical Comparison</h2>
+<div class="compare-panel">
+    <div class="compare-header">
+        <label for="compare-chart-select" class="compare-header-label">Compare:</label>
+        <select id="compare-chart-select" class="compare-select">
+            {% for key, chart in comparison_charts.items %}
+            <option value="{{ key }}">{{ chart.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% for key, chart in comparison_charts.items %}
+    <div class="compare-chart" data-chart-key="{{ key }}"{% if not forloop.first %} hidden{% endif %}>
+        {% for bar in chart.bars %}
+        <div class="compare-row">
+            <span class="compare-label">{{ bar.label }}</span>
+            <div class="compare-track">
+                <div class="compare-fill" style="width: {{ bar.pct }}%; background: {{ bar.color }};"></div>
+            </div>
+            <span class="compare-value">{{ bar.value }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+<script>
+(function() {
+    var select = document.getElementById('compare-chart-select');
+    if (!select) return;
+    select.addEventListener('change', function() {
+        document.querySelectorAll('.compare-chart').forEach(function(el) {
+            el.hidden = el.dataset.chartKey !== select.value;
+        });
+    });
+})();
+</script>

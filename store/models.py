@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import Godown, StockCategory, StockSubCategory, StockItem, StockTransaction, PurchaseRequisitionItem
+from core.models import Godown, StockCategory, StockSubCategory, StockItem, StockItemSerial, StockItemPiece, StockTransaction, RefillLog, PurchaseRequisitionItem
 
 class StoreGodown(Godown):
     class Meta:
@@ -35,6 +35,45 @@ class StoreStockTransaction(StockTransaction):
         app_label = 'store'
         verbose_name = 'Stock Transaction'
         verbose_name_plural = 'Stock Transactions'
+
+class StoreStockItemSerial(StockItemSerial):
+    class Meta:
+        proxy = True
+        app_label = 'store'
+        verbose_name = 'Stock Item Serial'
+        verbose_name_plural = 'Stock Item Serials'
+
+class StoreStockItemPiece(StockItemPiece):
+    class Meta:
+        proxy = True
+        app_label = 'store'
+        verbose_name = 'Stock Item Piece'
+        verbose_name_plural = 'Stock Item Pieces'
+
+class RefillEntry(RefillLog):
+    class Meta:
+        proxy = True
+        app_label = 'store'
+        verbose_name = 'Refill Entry'
+        verbose_name_plural = 'Refill Entries'
+
+class PendingReturnableItemsManager(models.Manager):
+    def get_queryset(self):
+        qs = super().get_queryset().filter(
+            transaction_type='issue', stock_item__is_returnable=True
+        ).select_related('stock_item')
+        pending_ids = [t.id for t in qs if t.is_pending_return]
+        return super().get_queryset().filter(pk__in=pending_ids)
+
+class PendingReturnableItems(StockTransaction):
+    """Store Department report: returnable items (e.g. Tools) issued but not yet returned."""
+    objects = PendingReturnableItemsManager()
+
+    class Meta:
+        proxy = True
+        app_label = 'store'
+        verbose_name = 'Pending Returnable Item'
+        verbose_name_plural = 'Pending Returnable Items'
 
 
 class PurchaseInwardManager(models.Manager):

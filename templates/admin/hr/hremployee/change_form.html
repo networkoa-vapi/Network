@@ -1,0 +1,18 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    {% if original %}
+    <li>
+        <a href="{% url 'generate_pdf_hr_letter' original.id 'experience' %}" class="button" target="_blank" rel="noopener">
+            {% translate "Experience Letter" %}
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'generate_pdf_hr_letter' original.id 'termination' %}" class="button" target="_blank" rel="noopener">
+            {% translate "Termination Letter" %}
+        </a>
+    </li>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

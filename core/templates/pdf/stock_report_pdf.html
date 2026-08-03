@@ -17,6 +17,8 @@
         .text-right { text-align: right; }
         .low-stock { color: #d9534f; font-weight: bold; }
         .empty { color: #999; text-align: center; padding: 15px; }
+        .pieces-row td { border-top: none; background-color: #fbfbfb; padding: 3px 8px 8px 20px; font-size: 8pt; color: #555; }
+        .piece-tag { display: inline-block; margin: 2px 6px 0 0; padding: 1px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; }
     </style>
 </head>
 <body>
@@ -25,8 +27,11 @@
         <div>{{ company.contact_email }} | {{ company.contact_phone }}</div>
     </div>
 
-    <div class="title">CURRENT STOCK REPORT{% if filtered_godown %} - {{ filtered_godown.name }}{% endif %}</div>
-    <div class="meta">Generated on {{ generated_at|date:"d M Y, h:i A" }}</div>
+    <div class="title">STOCK REPORT{% if filtered_godown %} - {{ filtered_godown.name }}{% endif %}</div>
+    <div class="meta">
+        Period: {% if date_from or date_to %}{{ date_from|date:"d M Y"|default:"Beginning" }} to {{ date_to|date:"d M Y"|default:"Today" }}{% else %}All Time{% endif %}
+        | Generated on {{ generated_at|date:"d M Y, h:i A" }}
+    </div>
 
     <div class="section-title">Company-Wide Summary (All Godowns)</div>
     {% if summary_rows %}
@@ -37,7 +42,10 @@
                 <th>Name</th>
                 <th>Category</th>
                 <th>Unit</th>
-                <th class="text-right">Total Stock</th>
+                <th class="text-right">Opening Stock</th>
+                <th class="text-right">Purchased Stock</th>
+                <th class="text-right">Issued Stock</th>
+                <th class="text-right">Balance Stock</th>
                 <th class="text-right">Reorder Level</th>
                 <th>Status</th>
             </tr>
@@ -49,10 +57,21 @@
                 <td>{{ row.item.name }}</td>
                 <td>{{ row.item.category.name }}{% if row.item.subcategory %} - {{ row.item.subcategory.name }}{% endif %}</td>
                 <td>{{ row.item.get_unit_display }}</td>
+                <td class="text-right">{{ row.opening }}</td>
+                <td class="text-right">{{ row.purchased }}</td>
+                <td class="text-right">{{ row.issued }}</td>
                 <td class="text-right {% if row.low_stock %}low-stock{% endif %}">{{ row.total }}</td>
                 <td class="text-right">{{ row.item.reorder_level }}</td>
                 <td class="{% if row.low_stock %}low-stock{% endif %}">{% if row.low_stock %}LOW STOCK{% else %}OK{% endif %}</td>
             </tr>
+            {% if row.pieces %}
+            <tr class="pieces-row">
+                <td colspan="10">
+                    Pieces in stock:
+                    {% for piece in row.pieces %}<span class="piece-tag">{{ piece.label }}: {{ piece.quantity }} {{ row.item.get_unit_display }}</span>{% endfor %}
+                </td>
+            </tr>
+            {% endif %}
             {% endfor %}
         </tbody>
     </table>
@@ -70,7 +89,10 @@
                 <th>Name</th>
                 <th>Category</th>
                 <th>Unit</th>
-                <th class="text-right">Stock at this Godown</th>
+                <th class="text-right">Opening Stock</th>
+                <th class="text-right">Purchased Stock</th>
+                <th class="text-right">Issued Stock</th>
+                <th class="text-right">Balance Stock</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -81,14 +103,25 @@
                 <td>{{ row.item.name }}</td>
                 <td>{{ row.item.category.name }}{% if row.item.subcategory %} - {{ row.item.subcategory.name }}{% endif %}</td>
                 <td>{{ row.item.get_unit_display }}</td>
+                <td class="text-right">{{ row.opening }}</td>
+                <td class="text-right">{{ row.purchased }}</td>
+                <td class="text-right">{{ row.issued }}</td>
                 <td class="text-right {% if row.low_stock %}low-stock{% endif %}">{{ row.balance }}</td>
                 <td class="{% if row.low_stock %}low-stock{% endif %}">{% if row.low_stock %}LOW STOCK{% else %}OK{% endif %}</td>
             </tr>
+            {% if row.pieces %}
+            <tr class="pieces-row">
+                <td colspan="9">
+                    Pieces in stock:
+                    {% for piece in row.pieces %}<span class="piece-tag">{{ piece.label }}: {{ piece.quantity }} {{ row.item.get_unit_display }}</span>{% endfor %}
+                </td>
+            </tr>
+            {% endif %}
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <div class="empty">No stock currently held at this godown.</div>
+    <div class="empty">No stock movement at this godown for the selected period.</div>
     {% endif %}
     {% endfor %}
 </body>

@@ -16,6 +16,20 @@
         </a>
     </li>
     {% endif %}
+    {% if manage_serials_url %}
+    <li>
+        <a href="{{ manage_serials_url }}" class="button">
+            {% translate "Manage Serial Numbers" %}
+        </a>
+    </li>
+    {% endif %}
+    {% if manage_pieces_url %}
+    <li>
+        <a href="{{ manage_pieces_url }}" class="button">
+            {% translate "Manage Pieces" %}
+        </a>
+    </li>
+    {% endif %}
     {% if stock_report_url %}
     <li>
         <a href="{{ stock_report_url }}" class="button">

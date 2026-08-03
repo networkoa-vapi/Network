@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ offer.letter_number }} - {{ offer.candidate_name }}</title>
+    <style>
+        /* Frame geometry reproduces the original letterhead pad exactly:
+           logo 3.075in x 0.75in at the original left-aligned position,
+           footer address bar 7.4236in x 0.6424in spanning the content width,
+           both repeating on every page via xhtml2pdf's @frame mechanism
+           (position:fixed only renders once, which was dropping the footer
+           on all but the last page). Frames are given headroom beyond the
+           image's own size - a frame sized exactly to its content gets
+           silently dropped by xhtml2pdf instead of rendered. */
+        @page {
+            size: A4;
+            @frame header_frame {
+                -pdf-frame-content: header_content;
+                top: 0.4cm; left: 1.09cm; width: 8.6cm; height: 2.4cm;
+            }
+            @frame content_frame {
+                top: 2.9cm; left: 1.09cm; width: 18.85cm; height: 23.7cm;
+            }
+            @frame footer_frame {
+                -pdf-frame-content: footer_content;
+                top: 26.6cm; left: 1.09cm; width: 19.5cm; height: 2.6cm;
+            }
+        }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10.5pt; color: #111; line-height: 1.5; }
+        #header_content img { width: 7.81cm; height: 1.91cm; }
+        #footer_content img { width: 18.85cm; height: 1.64cm; }
+        .meta-row { width: 100%; margin-bottom: 14px; font-size: 9.5pt; }
+        .meta-row td { vertical-align: top; }
+        .addressee { margin-bottom: 10px; }
+        .subject { font-weight: bold; margin: 12px 0; }
+        p { margin: 0 0 10px 0; text-align: justify; }
+        .terms-heading { font-weight: bold; margin: 14px 0 6px; }
+        ol.terms { margin: 0 0 12px 0; padding-left: 18px; }
+        ol.terms li { margin-bottom: 8px; text-align: justify; }
+        .bold { font-weight: bold; }
+        table.comp-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10pt; }
+        table.comp-table td { padding: 4px 6px; border-bottom: 1px solid #ddd; }
+        table.comp-table td.amt { text-align: right; width: 130px; }
+        table.comp-table tr.total-row td { border-top: 1.5px solid #333; border-bottom: none; font-weight: bold; }
+        ul.facilities { margin: 0 0 12px 0; padding-left: 18px; }
+        ul.facilities li { margin-bottom: 4px; }
+        .closing { margin-top: 16px; }
+        .acceptance { margin-top: 26px; border-top: 1px solid #999; padding-top: 14px; }
+        .acceptance-heading { font-weight: bold; margin-bottom: 6px; }
+        .sign-row { margin-top: 30px; }
+        .sign-row .cell { display: inline-block; width: 48%; }
+    </style>
+</head>
+<body>
+    <div id="header_content">
+        <img src="{% static 'letterhead/offer_letter_header.jpeg' %}" alt="{{ company.name }}">
+    </div>
+    <div id="footer_content">
+        <img src="{% static 'letterhead/offer_letter_footer.jpeg' %}" alt="{{ company.name }}">
+    </div>
+
+    <table class="meta-row">
+        <tr>
+            <td style="text-align:left;">Letter No: <span class="bold">{{ offer.letter_number }}</span></td>
+            <td style="text-align:right;">Date: <span class="bold">{{ offer.letter_date|date:"d-m-Y" }}</span></td>
+        </tr>
+    </table>
+
+    <div class="addressee">
+        <div>To,</div>
+        <div class="bold">{{ offer.candidate_title }} {{ offer.candidate_name }},</div>
+        {% if offer.candidate_address %}
+            {% for line in offer.candidate_address.splitlines %}<div>{{ line }}</div>{% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="subject">Subject: Provisional Offer Letter</div>
+
+    <p>Dear {{ offer.candidate_title }} {{ offer.candidate_first_name }},</p>
+
+    <p>This is reference to the interview and further to your selection; we have pleasure in giving you this
+    offer letter setting out the details of your employment with us. We are pleased to offer you the position
+    of &ldquo;<span class="bold">{{ offer.designation }}</span>&rdquo; in <span class="bold">{{ offer.department }}</span>
+    based as M/s. {{ company.name }}, Gala No. 45 &amp; 46, J type Area, Opp. Modison Metal, GIDC Vapi (Gujarat).</p>
+
+    <div class="terms-heading">Terms and Condition:</div>
+    <ol class="terms">
+        <li>This provisional Offer is valid for 3 days, in which you have to accept offer, submit your resignation,
+        collect the acceptance copy and confirm the actual date of your Joining.</li>
+        <li>You have to submit references of two persons (other than relatives) at the time of joining. Also you
+        have to submit a copy of all documents and certificates at the time of Joining.</li>
+        <li>We expect your joining on or before <span class="bold">{{ offer.expected_joining_date|date:"jS M Y" }}</span>.</li>
+        <li>Your remuneration package will be Rs {{ offer.monthly_remuneration|floatformat:2 }} PM
+        (Rs. {{ offer.get_monthly_remuneration_words }} per month){% if offer.conveyance_allowance %} plus
+        Rs {{ offer.conveyance_allowance|floatformat:2 }} Fix petrol expense (will be calculated as per present
+        days) as a reimbursement to carried out Project activity during the month{% endif %} agreed by you during
+        interview.</li>
+        <li>Appointment letter will be issue to you at the time of joining.</li>
+        <li>Tenure of Engagement &ndash; as per the Company.</li>
+        <li>You shall be bound to comply &amp; respect entire HR &amp; Administration policies and procedures of
+        the company.</li>
+        <li>You have to submit vehicle driving License copy at the time of joining. And as this is field Job you
+        have to use your own 2-wheeler.</li>
+        <li>Your Offer is valid, subject to result of pre-employment Examination.</li>
+        <li>The roles &amp; responsibilities of this employment and Terms &amp; Conditions of your employment will
+        be specified to you at the time of joining.</li>
+        <li>You must have to follow all safety rules, personnel Hygiene practice daily basis as per GMP requirement
+        e.g. regular clean shave, bathing, nails cut, proper cutting etc.</li>
+    </ol>
+
+    <div class="terms-heading">Compensation Details:</div>
+    <table class="comp-table">
+        <tr><td>Basic Monthly Remuneration</td><td class="amt">Rs {{ offer.monthly_remuneration|floatformat:2 }}</td></tr>
+        {% if offer.conveyance_allowance %}
+        <tr><td>Conveyance Allowance</td><td class="amt">Rs {{ offer.conveyance_allowance|floatformat:2 }}</td></tr>
+        {% endif %}
+        {% for a in offer.allowances.all %}
+        <tr><td>{{ a.name }}</td><td class="amt">Rs {{ a.amount|floatformat:2 }}</td></tr>
+        {% endfor %}
+        <tr class="total-row"><td>Gross Monthly Total</td><td class="amt">Rs {{ offer.gross_monthly_total|floatformat:2 }}</td></tr>
+        {% if offer.pf_applicable %}
+        <tr><td>Provident Fund (Employee Contribution)</td><td class="amt">Rs {{ offer.pf_employee_contribution|floatformat:2 }}</td></tr>
+        <tr><td>Provident Fund (Employer Contribution)</td><td class="amt">Rs {{ offer.pf_employer_contribution|floatformat:2 }}</td></tr>
+        {% endif %}
+        {% if offer.esic_applicable %}
+        <tr><td>ESIC (Employee Contribution)</td><td class="amt">Rs {{ offer.esic_employee_contribution|floatformat:2 }}</td></tr>
+        <tr><td>ESIC (Employer Contribution)</td><td class="amt">Rs {{ offer.esic_employer_contribution|floatformat:2 }}</td></tr>
+        {% endif %}
+    </table>
+
+    {% if offer.facilities.all %}
+    <div class="terms-heading">Other Facilities Offered:</div>
+    <ul class="facilities">
+        {% for f in offer.facilities.all %}
+        <li>{{ f.name }}{% if f.description %} - {{ f.description }}{% endif %}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <p>Please signify your acceptance of these terms and condition by signing the enclosed duplicate and returning
+    it to us within two days. Could you sign and return the attached confidentiality undertaking.</p>
+
+    <div class="closing">
+        <div>Thanking You, With Best Wishes,</div>
+        <div>For, {{ company.name }}</div>
+    </div>
+
+    <div class="acceptance">
+        <div class="acceptance-heading">HR &amp; Admin Acceptance:</div>
+        <p>I have read and understand the terms and condition mentioned in this letter and I hereby confirm
+        unconditional acceptance of the same.</p>
+        <p>Please mention from which date you will be joined the company,</p>
+
+        <div class="sign-row">
+            <div class="cell">Date: ___________________</div>
+            <div class="cell">Signature: ___________________</div>
+        </div>
+        <div style="margin-top:14px;">Full Name: {{ offer.candidate_name }}</div>
+    </div>
+</body>
+</html>

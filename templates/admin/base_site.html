@@ -5,9 +5,10 @@
 
 {% block branding %}
 <div id="site-name">
-    <a href="{% url 'admin:index' %}">
-        <img src="{% static 'company_logos/noa_erp_logo_v3.png' %}" alt="NOA ERP" class="brand-logo">
-        <span>{{ site_header|default:_('NOA ERP') }}</span>
+    <a href="{% url 'admin:index' %}" title="{{ site_header|default:_('NOA ERP') }}">
+        <img src="{% static 'company_logos/noa_icon.png' %}" alt="NOA" class="brand-logo">
+        <img src="{% static 'company_logos/noa_wordmark.png' %}" alt="Network Office Automation" class="brand-wordmark">
+        <span class="brand-suffix">ERP Software</span>
     </a>
 </div>
 {% if user.is_anonymous %}
@@ -20,4 +21,11 @@
 <link rel="stylesheet" href="{% static 'custom_admin.css' %}?v={% static_version 'custom_admin.css' %}">
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
+{% block nav-global %}
+{% if user.is_authenticated %}
+<div id="global-reports-bar">
+    <button type="button" class="button" onclick="window.print()">🖨 Print</button>
+    <a href="{% url 'reports_center' %}" class="button">📊 Reports Center</a>
+</div>
+{% endif %}
+{% endblock %}
