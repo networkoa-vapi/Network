@@ -134,9 +134,16 @@ print('\n=== 6. What real staff users actually see ===')
 print('        (the check that catches an empty sidebar)\n')
 
 nav_groups = settings.UNFOLD.get('SIDEBAR', {}).get('navigation', [])
-total_nav_items = sum(len(g.get('items', [])) for g in nav_groups)
+all_items = [item for g in nav_groups for item in g.get('items', [])]
+total_nav_items = len(all_items)
+
+# Some entries (Dashboard, Reports Center) carry no permission and are visible to
+# anyone who can reach the admin at all. Counting those would mask a completely
+# broken permission setup as "2 entries visible", so the check below looks only at
+# the permission-GUARDED entries - the ones that represent real module access.
+guarded_total = sum(1 for item in all_items if item.get('permission') is not None)
 print(f'        sidebar declares {total_nav_items} entries across '
-      f'{len(nav_groups)} groups\n')
+      f'{len(nav_groups)} groups, {guarded_total} of them permission-guarded\n')
 
 staff = (User.objects.filter(is_active=True, is_staff=True)
          .select_related('role').order_by('username'))
@@ -144,19 +151,24 @@ staff = (User.objects.filter(is_active=True, is_staff=True)
 if not staff.exists():
     warn('no active staff users found to check')
 
-blind = []
+blind = []          # department staff who can reach nothing - a real failure
+portal_only = []    # portal roles carrying an unnecessary staff flag
 for user in staff:
     request = _Request(user)
 
     visible = 0
-    for group in nav_groups:
-        for item in group.get('items', []):
-            check = item.get('permission')
-            try:
-                if check is None or check(request):
-                    visible += 1
-            except Exception:                      # noqa: BLE001, S110
-                pass
+    visible_guarded = 0
+    for item in all_items:
+        check = item.get('permission')
+        if check is None:
+            visible += 1
+            continue
+        try:
+            if check(request):
+                visible += 1
+                visible_guarded += 1
+        except Exception:                          # noqa: BLE001, S110
+            pass
 
     cards = len(resolve_widgets(user))
     dept = department_for(user) or '-'
@@ -164,28 +176,45 @@ for user in staff:
     flag = 'superuser' if user.is_superuser else dept
 
     line = (f'        {user.username:22} {flag:10} '
-            f'sidebar {visible:2}/{total_nav_items}   cards {cards:2}   {role}')
+            f'sidebar {visible:2}/{total_nav_items}   '
+            f'modules {visible_guarded:2}/{guarded_total}   '
+            f'cards {cards:2}   {role}')
     print(line)
 
     if not user.is_superuser:
-        if visible == 0:
-            blind.append(user.username)
+        if visible_guarded == 0:
+            # Only a DEPARTMENT role is expected to reach admin screens. Portal
+            # roles (Customer, Engineer) run off their own views - the engineer
+            # portal gates on role.name, not on admin permissions - so having no
+            # module access is normal for them and must not read as a failure.
+            if department_for(user):
+                blind.append(user.username)
+            else:
+                portal_only.append(user.username)
         if user.role is None:
             warn(f'{user.username} is staff but has no role assigned')
 
 print()
+if portal_only:
+    warn(f'{len(portal_only)} portal-role account(s) carry the staff flag but have '
+         f'no admin access: {", ".join(portal_only)}. Harmless - the customer and '
+         f'engineer portals do not use admin permissions - but the flag is '
+         f'unnecessary and can be cleared.')
+
+department_staff = [u for u in staff if not u.is_superuser and department_for(u)]
+
 if blind:
-    fail(f'{len(blind)} non-superuser staff would see an EMPTY sidebar: '
+    fail(f'{len(blind)} DEPARTMENT staff can reach NO module screens: '
          f'{", ".join(blind)}')
     print('        This is the proxy-permission bug. Sidebar and dashboard guards')
     print('        must name the proxy model (sales.view_salesinvoice), not the')
     print('        core model (core.view_invoice), which role groups never hold.')
-elif staff.filter(is_superuser=False).exists():
-    ok('every non-superuser staff member resolves to a usable sidebar')
+elif department_staff:
+    ok(f'all {len(department_staff)} department staff resolve to real module access')
 else:
-    warn('only superusers exist - a superuser bypasses every permission check, so '
-         'this run proves nothing about ordinary staff. Re-run once a real staff '
-         'account exists.')
+    warn('no department staff accounts exist (only superusers and/or portal roles). '
+         'A superuser bypasses every permission check, so this run proves nothing '
+         'about ordinary staff. Re-run once a department account exists.')
 
 print('\n=== 7. Portal role groups ===')
 from django.contrib.auth.models import Group  # noqa: E402
