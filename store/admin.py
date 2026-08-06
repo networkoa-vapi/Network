@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib import admin
-from import_export.admin import ImportExportModelAdmin
 from core.models import StockItemSerial, StockItemPiece
 from .models import (
     StoreGodown, StoreStockCategory, StoreStockSubCategory, StoreStockItem, StoreStockTransaction,
@@ -10,6 +9,9 @@ from core.admin import (
     GodownAdmin, StockCategoryAdmin, StockSubCategoryAdmin, StockItemAdmin, StockTransactionAdmin,
     StockItemSerialAdmin, StockItemPieceAdmin, RefillLogAdmin, PendingReturnableItemsAdmin, ItemsToIssueAdmin,
     SerialSelectMediaMixin,
+    # Unfold-styled base - importing import_export's own class here instead would
+    # leave these two screens as unthemed stock Django admin pages.
+    ImportExportModelAdmin,
 )
 
 admin.site.register(StoreGodown, GodownAdmin)

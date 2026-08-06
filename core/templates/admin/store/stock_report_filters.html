@@ -3,79 +3,92 @@
 
 {% block title %}Stock Report | {{ site_title|default:_('NOA ERP') }}{% endblock %}
 
-{% block breadcrumbs %}
-<div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
-    &rsaquo; <a href="{% url 'admin:store_storestockitem_changelist' %}">{% translate 'Stock Items' %}</a>
-    &rsaquo; Stock Report
-</div>
-{% endblock %}
-
 {% block content %}
-<div id="content-main">
-    <div class="module" style="padding: 20px 25px; max-width: 640px;">
-        <h1 style="margin-top:0;">Stock Report</h1>
-        <p class="help">Choose any filters you need, then generate a printable PDF. Leave a filter on "All" to include everything for it.</p>
+<div class="noa-page" style="max-width:680px;">
+    <div class="noa-card">
+        <div class="noa-card__head">
+            <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+            <span class="noa-card__title">{% translate "Stock Report" %}</span>
+        </div>
 
-        <form method="get" action="{% url 'generate_pdf_stock_report' %}" target="_blank">
-            <div class="form-row">
-                <label>Period</label>
-                <input type="date" name="date_from" id="id_date_from">
-                <span style="margin: 0 8px;">to</span>
-                <input type="date" name="date_to" id="id_date_to">
-                <p class="help">Shows Opening / Purchased / Issued / Balance stock for this period. Leave both blank for an all-time report (Opening will show as 0).</p>
-            </div>
+        <div class="noa-card__body">
+            <p class="noa-page__lead">
+                {% translate 'Choose any filters you need, then generate a printable PDF. Leave a filter on "All" to include everything for it.' %}
+            </p>
 
-            <div class="form-row">
-                <label for="id_godown">Godown</label>
-                <select name="godown" id="id_godown">
-                    <option value="">All Godowns</option>
-                    {% for g in godowns %}
-                    <option value="{{ g.pk }}">{{ g.name }} ({{ g.get_godown_type_display }})</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <form method="get" action="{% url 'generate_pdf_stock_report' %}" target="_blank" style="margin-top:1.4rem;">
 
-            <div class="form-row">
-                <label for="id_category">Category</label>
-                <select name="category" id="id_category">
-                    <option value="">All Categories</option>
-                    {% for c in categories %}
-                    <option value="{{ c.pk }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label">{% translate "Period" %}</label>
+                    <div class="noa-field__row">
+                        <input class="noa-input" type="date" name="date_from" id="id_date_from">
+                        <span>{% translate "to" %}</span>
+                        <input class="noa-input" type="date" name="date_to" id="id_date_to">
+                    </div>
+                    <p class="noa-field__help">
+                        {% translate "Shows Opening / Purchased / Issued / Balance stock for this period. Leave both blank for an all-time report (Opening will show as 0)." %}
+                    </p>
+                </div>
 
-            <div class="form-row">
-                <label for="id_subcategory">Sub-Category</label>
-                <select name="subcategory" id="id_subcategory">
-                    <option value="">All Sub-Categories</option>
-                    {% for s in subcategories %}
-                    <option value="{{ s.pk }}" data-category="{{ s.category_id }}">{{ s.category.name }} - {{ s.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_godown">{% translate "Godown" %}</label>
+                    <select class="noa-select" name="godown" id="id_godown">
+                        <option value="">{% translate "All Godowns" %}</option>
+                        {% for g in godowns %}
+                            <option value="{{ g.pk }}">{{ g.name }} ({{ g.get_godown_type_display }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-row">
-                <label for="id_unit">Unit</label>
-                <select name="unit" id="id_unit">
-                    <option value="">All Units</option>
-                    {% for value, label in units %}
-                    <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_category">{% translate "Category" %}</label>
+                    <select class="noa-select" name="category" id="id_category">
+                        <option value="">{% translate "All Categories" %}</option>
+                        {% for c in categories %}
+                            <option value="{{ c.pk }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-row checkbox-row">
-                <input type="checkbox" name="low_stock_only" id="id_low_stock_only" value="1">
-                <label for="id_low_stock_only" style="display:inline;">Low stock items only (at or below reorder level)</label>
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_subcategory">{% translate "Sub-Category" %}</label>
+                    <select class="noa-select" name="subcategory" id="id_subcategory">
+                        <option value="">{% translate "All Sub-Categories" %}</option>
+                        {% for s in subcategories %}
+                            <option value="{{ s.pk }}" data-category="{{ s.category_id }}">{{ s.category.name }} - {{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="submit-row">
-                <input type="submit" value="Generate Report (PDF)" class="default">
-                <a href="{% url 'generate_pdf_stock_report' %}" target="_blank" class="button" style="margin-left: 10px;">Print Full Report (No Filters)</a>
-            </div>
-        </form>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_unit">{% translate "Unit" %}</label>
+                    <select class="noa-select" name="unit" id="id_unit">
+                        <option value="">{% translate "All Units" %}</option>
+                        {% for value, label in units %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="noa-field">
+                    <label class="noa-check" for="id_low_stock_only">
+                        <input type="checkbox" name="low_stock_only" id="id_low_stock_only" value="1">
+                        <span>{% translate "Low stock items only (at or below reorder level)" %}</span>
+                    </label>
+                </div>
+
+                <div class="noa-actions">
+                    <button type="submit" class="noa-btn noa-btn--primary">
+                        <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                        {% translate "Generate Report (PDF)" %}
+                    </button>
+                    <a href="{% url 'generate_pdf_stock_report' %}" target="_blank" class="noa-btn">
+                        <span class="material-symbols-outlined" aria-hidden="true">print</span>
+                        {% translate "Print Full Report (No Filters)" %}
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

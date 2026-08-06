@@ -3,16 +3,13 @@
 
 {% block object-tools-items %}
     {% if original %}
-    <li>
-        <a href="{% url 'generate_pdf_hr_letter' original.id 'experience' %}" class="button" target="_blank" rel="noopener">
-            {% translate "Experience Letter" %}
-        </a>
-    </li>
-    <li>
-        <a href="{% url 'generate_pdf_hr_letter' original.id 'termination' %}" class="button" target="_blank" rel="noopener">
-            {% translate "Termination Letter" %}
-        </a>
-    </li>
+        {% url 'generate_pdf_hr_letter' original.id 'experience' as experience_url %}
+        {% translate "Experience Letter" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=experience_url icon="workspace_premium" blank=1 %}
+
+        {% url 'generate_pdf_hr_letter' original.id 'termination' as termination_url %}
+        {% translate "Termination Letter" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=termination_url icon="logout" blank=1 %}
     {% endif %}
     {{ block.super }}
 {% endblock %}

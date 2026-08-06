@@ -11,6 +11,7 @@ diff-match-patch==20241021
 Django==6.0.7
 django-import-export==4.4.1
 django-smart-selects==1.7.2
+django-unfold==0.102.0
 html5lib==1.1
 idna==3.18
 lxml==6.1.1

@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.portal_login, name='portal_login'),
     path('logout/', views.portal_logout, name='portal_logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/customize/', views.dashboard_customize, name='dashboard_customize'),
     path('quotations/', views.quotations_list, name='quotations_list'),
     path('quotations/<int:quote_id>/accept/', views.accept_quotation, name='accept_quotation'),
     path('tickets/', views.tickets_list, name='tickets_list'),

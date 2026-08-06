@@ -3,42 +3,9 @@
 
 {% block title %}Email Purchase Order | {{ site_title|default:_('NOA ERP') }}{% endblock %}
 
-{% block breadcrumbs %}
-<div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
-    &rsaquo; <a href="{% url 'admin:purchase_supplierpurchaseorder_changelist' %}">{% translate 'Purchase Orders' %}</a>
-    &rsaquo; <a href="{% url 'admin:purchase_supplierpurchaseorder_change' po.id %}">{{ po.po_number }}</a>
-    &rsaquo; Email
-</div>
-{% endblock %}
-
 {% block content %}
-<div id="content-main">
-    <div class="module" style="padding: 20px 25px; max-width: 560px;">
-        <h1 style="margin-top:0;">Email Purchase Order {{ po.po_number }}</h1>
-        <p class="help">Sends the PO as a PDF attachment to the supplier.</p>
-
-        {% if messages %}
-            {% for message in messages %}
-                <p class="{{ message.tags }}" style="padding:10px; border-radius:4px; background:#fef2f2; color:#b91c1c;">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-row">
-                <label for="id_email">Recipient Email</label>
-                <input type="email" name="email" id="id_email" value="{{ po.supplier.email }}" required style="width:100%;">
-            </div>
-            <div class="form-row">
-                <label for="id_note">Message (optional)</label>
-                <textarea name="note" id="id_note" rows="4" style="width:100%;"></textarea>
-            </div>
-            <div class="submit-row">
-                <input type="submit" value="Send Email" class="default">
-                <a href="{% url 'admin:purchase_supplierpurchaseorder_change' po.id %}" class="button" style="margin-left:10px;">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
+    {% url 'admin:purchase_supplierpurchaseorder_change' po.id as cancel_url %}
+    {% blocktranslate with number=po.po_number asvar heading %}Email Purchase Order {{ number }}{% endblocktranslate %}
+    {% translate "Sends the PO as a PDF attachment to the supplier." as lead %}
+    {% include "admin/_document_email_form.html" with heading=heading lead=lead cancel_url=cancel_url default_email=po.supplier.email %}
 {% endblock %}

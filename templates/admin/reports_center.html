@@ -1,86 +1,102 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
 
+{% comment %}
+Hand-built view, so it carries its own field styling from css/unfold_noa.css -
+Unfold only styles ModelAdmin-rendered forms. Messages are rendered by Unfold's
+base template, so this page no longer emits its own messagelist.
+{% endcomment %}
+
 {% block title %}Reports Center | {{ site_title|default:_('NOA ERP') }}{% endblock %}
 
-{% block breadcrumbs %}
-<div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
-    &rsaquo; Reports Center
-</div>
-{% endblock %}
-
 {% block content %}
-<div id="content-main">
-    <div class="module reports-center-module" style="padding: 20px 25px; max-width: 720px;">
-        <h1 style="margin-top:0;">📊 Reports Center</h1>
-        <p class="help">One place to pull a report for any department - pick what you need, choose a period, then Download, Email, or share on WhatsApp.</p>
+<div class="noa-page">
+    <div class="noa-card">
+        <div class="noa-card__head">
+            <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+            <span class="noa-card__title">{% translate "Reports Center" %}</span>
+        </div>
 
-        {% if messages %}
-        <ul class="messagelist">
-            {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
+        <div class="noa-card__body">
+            <p class="noa-page__lead">
+                {% translate "One place to pull a report for any department - pick what you need, choose a period, then download, email, or share it on WhatsApp." %}
+            </p>
 
-        <form method="get" action="{% url 'reports_download' %}" id="reports-form">
-            {% csrf_token %}
-            <div class="form-row">
-                <label for="id_report">Report</label>
-                <select name="report" id="id_report" required>
-                    <option value="">--------- Select a report ---------</option>
-                    {% for dept, options in departments %}
-                    <optgroup label="{{ dept }}">
-                        {% for value, label in options %}
-                        <option value="{{ value }}">{{ label }}</option>
+            <form method="get" action="{% url 'reports_download' %}" id="reports-form" style="margin-top:1.4rem;">
+                {% csrf_token %}
+
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_report">{% translate "Report" %}</label>
+                    <select class="noa-select" name="report" id="id_report" required>
+                        <option value="">{% translate "Select a report" %}</option>
+                        {% for dept, options in departments %}
+                            <optgroup label="{{ dept }}">
+                                {% for value, label in options %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </optgroup>
                         {% endfor %}
-                    </optgroup>
-                    {% endfor %}
-                </select>
-            </div>
+                    </select>
+                </div>
 
-            <div class="form-row">
-                <label for="id_preset">Duration</label>
-                <select name="preset" id="id_preset">
-                    {% for value, label in duration_presets %}
-                    <option value="{{ value }}" {% if value == 'full' %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_preset">{% translate "Duration" %}</label>
+                    <select class="noa-select" name="preset" id="id_preset">
+                        {% for value, label in duration_presets %}
+                            <option value="{{ value }}" {% if value == 'full' %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-row" id="custom-range-row" style="display:none;">
-                <label>Custom Range</label>
-                <input type="date" name="date_from" id="id_date_from">
-                <span style="margin: 0 8px;">to</span>
-                <input type="date" name="date_to" id="id_date_to">
-            </div>
+                <div class="noa-field" id="custom-range-row" style="display:none;">
+                    <label class="noa-field__label">{% translate "Custom range" %}</label>
+                    <div class="noa-field__row">
+                        <input class="noa-input" type="date" name="date_from" id="id_date_from">
+                        <span>{% translate "to" %}</span>
+                        <input class="noa-input" type="date" name="date_to" id="id_date_to">
+                    </div>
+                </div>
 
-            <div class="form-row">
-                <label for="id_format">Format</label>
-                <select name="format" id="id_format">
-                    {% for value, label in format_choices %}
-                    <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_format">{% translate "Format" %}</label>
+                    <select class="noa-select" name="format" id="id_format">
+                        {% for value, label in format_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-row">
-                <label for="id_email">Email to</label>
-                <input type="email" name="email" id="id_email" placeholder="recipient@example.com (used by the Email button)" style="width: 100%;">
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_email">{% translate "Email to" %}</label>
+                    <input class="noa-input" type="email" name="email" id="id_email"
+                           placeholder="recipient@example.com">
+                </div>
 
-            <div class="form-row">
-                <label for="id_whatsapp_number">WhatsApp number</label>
-                <input type="text" name="whatsapp_number" id="id_whatsapp_number" placeholder="Optional - leave blank to pick a contact when WhatsApp opens" style="width: 100%;">
-            </div>
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_whatsapp_number">{% translate "WhatsApp number" %}</label>
+                    <input class="noa-input" type="text" name="whatsapp_number" id="id_whatsapp_number"
+                           placeholder="{% translate 'Optional - leave blank to pick a contact when WhatsApp opens' %}">
+                </div>
 
-            <div class="submit-row" style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button type="submit" class="default" formaction="{% url 'reports_download' %}" formmethod="get" formtarget="_blank">⬇ Download</button>
-                <button type="submit" class="button" formaction="{% url 'reports_email' %}" formmethod="post">✉ Email</button>
-                <button type="submit" class="button" formaction="{% url 'reports_whatsapp' %}" formmethod="get" formtarget="_blank">📱 WhatsApp</button>
-            </div>
-        </form>
+                <div class="noa-actions">
+                    <button type="submit" class="noa-btn noa-btn--primary"
+                            formaction="{% url 'reports_download' %}" formmethod="get" formtarget="_blank">
+                        <span class="material-symbols-outlined" aria-hidden="true">download</span>
+                        {% translate "Download" %}
+                    </button>
+                    <button type="submit" class="noa-btn"
+                            formaction="{% url 'reports_email' %}" formmethod="post">
+                        <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+                        {% translate "Email" %}
+                    </button>
+                    <button type="submit" class="noa-btn"
+                            formaction="{% url 'reports_whatsapp' %}" formmethod="get" formtarget="_blank">
+                        <span class="material-symbols-outlined" aria-hidden="true">chat</span>
+                        {% translate "WhatsApp" %}
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -90,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var customRow = document.getElementById('custom-range-row');
 
     function toggleCustomRange() {
-        customRow.style.display = presetSelect.value === 'custom' ? 'flex' : 'none';
+        customRow.style.display = presetSelect.value === 'custom' ? 'block' : 'none';
     }
     presetSelect.addEventListener('change', toggleCustomRange);
     toggleCustomRange();

@@ -1,20 +1,13 @@
 {% extends "admin/change_list.html" %}
 {% load i18n %}
 
-{% block object-tools-items %}
+{% block nav-global %}
     {% if equipment_report_url %}
-    <li>
-        <a href="{{ equipment_report_url }}" class="button" target="_blank" rel="noopener">
-            {% translate "Print Equipment Report (All)" %}
-        </a>
-    </li>
+        {% translate "Print Equipment Report (All)" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=equipment_report_url icon="print" blank=1 %}
     {% endif %}
     {% if manage_coverage_items_url %}
-    <li>
-        <a href="{{ manage_coverage_items_url }}" class="button">
-            {% translate "Manage Coverage Items" %}
-        </a>
-    </li>
+        {% translate "Manage Coverage Items" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_coverage_items_url icon="checklist" %}
     {% endif %}
-    {{ block.super }}
 {% endblock %}

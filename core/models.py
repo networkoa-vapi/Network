@@ -211,7 +211,10 @@ class Company(models.Model):
 
 def get_default_company():
     """NOA ERP now serves a single tenant (NOA) — pre-select it everywhere by default."""
-    return Company.objects.order_by('pk').values_list('pk', flat=True).first()
+    try:
+        return Company.objects.order_by('pk').values_list('pk', flat=True).first()
+    except Exception:
+        return None
 
 
 def amount_to_words_inr(amount):
@@ -265,6 +268,32 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
+
+
+class DashboardPreference(models.Model):
+    """One user's chosen dashboard cards, in their chosen order.
+
+    Absent or empty means "use my role's preset", which is why a user who has
+    never customised anything needs no row here at all. What is stored is only a
+    preference - permissions are re-applied over it on every render, so revoking
+    someone's access removes the card even if they had picked it.
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name='dashboard_preference',
+    )
+    widgets = models.JSONField(
+        default=list, blank=True,
+        help_text="Ordered list of dashboard card keys. Empty means use the role preset.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Dashboard Preference"
+        verbose_name_plural = "Dashboard Preferences"
+
+    def __str__(self):
+        return f"Dashboard layout for {self.user}"
 
 
 class CustomerProfile(models.Model):

@@ -1,13 +1,9 @@
 {% extends "admin/change_list.html" %}
 {% load i18n %}
 
-{% block object-tools-items %}
+{% block nav-global %}
     {% if format_management_url %}
-    <li>
-        <a href="{{ format_management_url }}" class="button">
-            {% translate "Invoice Format Management" %}
-        </a>
-    </li>
+        {% translate "Invoice Format Management" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=format_management_url icon="tune" %}
     {% endif %}
-    {{ block.super }}
 {% endblock %}

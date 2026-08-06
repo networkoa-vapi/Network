@@ -1,0 +1,45 @@
+{% load i18n %}
+
+{% comment %}
+Shared "email this document as a PDF" form, used by the offer letter, supplier PO
+and purchase requisition screens - they differ only in wording and where Cancel
+goes back to.
+
+Expects: heading, lead, cancel_url, and optionally default_email.
+{% endcomment %}
+
+<div class="noa-page" style="max-width:600px;">
+    <div class="noa-card">
+        <div class="noa-card__head">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <span class="noa-card__title">{{ heading }}</span>
+        </div>
+
+        <div class="noa-card__body">
+            <p class="noa-page__lead">{{ lead }}</p>
+
+            <form method="post" style="margin-top:1.4rem;">
+                {% csrf_token %}
+
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_email">{% translate "Recipient email" %}</label>
+                    <input class="noa-input" type="email" name="email" id="id_email"
+                           value="{{ default_email|default:'' }}" required>
+                </div>
+
+                <div class="noa-field">
+                    <label class="noa-field__label" for="id_note">{% translate "Message (optional)" %}</label>
+                    <textarea class="noa-input" name="note" id="id_note" rows="4"></textarea>
+                </div>
+
+                <div class="noa-actions">
+                    <button type="submit" class="noa-btn noa-btn--primary">
+                        <span class="material-symbols-outlined" aria-hidden="true">send</span>
+                        {% translate "Send email" %}
+                    </button>
+                    <a href="{{ cancel_url }}" class="noa-btn">{% translate "Cancel" %}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -7,6 +7,86 @@ from django.core.exceptions import ValidationError
 from .models import Quotation, ServiceTicket, CustomerProfile, Company, Product, Division, ProductCategory, ProductSubCategory
 from django.http import HttpResponseForbidden
 
+def _admin_page(request, template, context=None):
+    """Render a hand-written page inside the admin's own chrome.
+
+    Several screens here (Reports Center, the stock report filters, the "email
+    this document" forms) render admin templates without being ModelAdmin views,
+    so nothing populates the admin context for them. Unfold builds its sidebar and
+    pulls in its stylesheets from that context - without it these pages come out as
+    bare unstyled HTML.
+    """
+    from django.contrib import admin as django_admin
+
+    page_context = django_admin.site.each_context(request)
+    page_context.update(context or {})
+    return render(request, template, page_context)
+
+
+@login_required
+def dashboard_customize(request):
+    """Let a user choose and order their own dashboard cards.
+
+    Only cards they hold the permission for are ever offered, so this screen
+    cannot be used to reach data the user isn't allowed to see. Saving an empty
+    selection clears the preference, which puts them back on their role preset
+    rather than leaving them with a blank dashboard.
+    """
+    from .dashboard import (
+        DEPARTMENT_LABELS, default_keys_for, department_for, widgets_for,
+    )
+    from .models import DashboardPreference
+
+    if not request.user.is_staff:
+        return HttpResponseForbidden("You do not have permission to view the dashboard.")
+
+    available = widgets_for(request.user)
+    available_keys = [w.key for w in available]
+
+    if request.method == 'POST':
+        if 'reset' in request.POST:
+            DashboardPreference.objects.filter(user=request.user).delete()
+            messages.success(request, 'Dashboard reset to your role default.')
+            return redirect('dashboard_customize')
+
+        # Order comes from the hidden field the drag handles maintain; anything
+        # not in it (or not permitted) is dropped.
+        ordered = [k for k in request.POST.get('order', '').split(',') if k]
+        chosen = set(request.POST.getlist('widgets'))
+        selection = [k for k in ordered if k in chosen and k in available_keys]
+        # Anything ticked but missing from the order string still gets included,
+        # so a card can never be silently lost if the JS didn't run.
+        selection += [k for k in available_keys if k in chosen and k not in selection]
+
+        if selection:
+            DashboardPreference.objects.update_or_create(
+                user=request.user, defaults={'widgets': selection},
+            )
+            messages.success(request, 'Your dashboard layout has been saved.')
+        else:
+            DashboardPreference.objects.filter(user=request.user).delete()
+            messages.info(request, 'No cards selected - your role default has been restored.')
+        return redirect('admin:index')
+
+    preference = getattr(request.user, 'dashboard_preference', None)
+    current = (preference.widgets if preference and preference.widgets
+               else default_keys_for(request.user))
+    current = [k for k in current if k in available_keys]
+
+    # Selected cards first, in their saved order, then the rest as options.
+    by_key = {w.key: w for w in available}
+    rows = [{'widget': by_key[k], 'selected': True} for k in current]
+    rows += [{'widget': w, 'selected': False} for w in available if w.key not in current]
+
+    department = department_for(request.user)
+    return _admin_page(request, 'admin/dashboard_customize.html', {
+        'rows': rows,
+        'title': 'Customize dashboard',
+        'department_label': DEPARTMENT_LABELS.get(department, ''),
+        'is_customised': bool(preference and preference.widgets),
+    })
+
+
 def _from_email_for(request):
     """Documents emailed from the CRM go out as the logged-in user's own email (each user
     configures theirs under Master › Users) - falls back to the site default if unset."""
@@ -412,7 +492,7 @@ def stock_report_filters_view(request):
         'subcategories': StockSubCategory.objects.filter(is_active=True).select_related('category').order_by('category__name', 'name'),
         'units': StockItem.UNIT_CHOICES,
     }
-    return render(request, 'admin/store/stock_report_filters.html', context)
+    return _admin_page(request, 'admin/store/stock_report_filters.html', context)
 
 # ==========================================
 # PROJECT DEPARTMENT - PURCHASE REQUISITION
@@ -524,7 +604,7 @@ def email_purchase_requisition(request, pr_id):
             messages.error(request, f'Could not send email - check email server settings. ({e})')
         return redirect('admin:project_purchaserequisition_change', pr.id)
 
-    return render(request, 'admin/project/email_purchase_requisition.html', {'pr': pr})
+    return _admin_page(request, 'admin/project/email_purchase_requisition.html', {'pr': pr})
 
 # ==========================================
 # PURCHASE DEPARTMENT - SUPPLIER PURCHASE ORDER
@@ -591,7 +671,7 @@ def email_supplier_po(request, po_id):
             messages.error(request, f'Could not send email - check email server settings. ({e})')
         return redirect('admin:purchase_supplierpurchaseorder_change', po.id)
 
-    return render(request, 'admin/purchase/email_supplier_po.html', {'po': po})
+    return _admin_page(request, 'admin/purchase/email_supplier_po.html', {'po': po})
 
 @login_required
 def whatsapp_share_supplier_po(request, po_id):
@@ -746,7 +826,7 @@ def email_offer_letter(request, offer_id):
             messages.error(request, f'Could not send email - check email server settings. ({e})')
         return redirect('admin:hr_hrofferletter_change', offer.id)
 
-    return render(request, 'admin/hr/email_offer_letter.html', {'offer': offer, 'default_email': offer.candidate_email})
+    return _admin_page(request, 'admin/hr/email_offer_letter.html', {'offer': offer, 'default_email': offer.candidate_email})
 
 @login_required
 def whatsapp_share_offer_letter(request, offer_id):
@@ -932,7 +1012,7 @@ def reports_center(request):
         'duration_presets': DURATION_PRESETS,
         'format_choices': FORMAT_CHOICES,
     }
-    return render(request, 'admin/reports_center.html', context)
+    return _admin_page(request, 'admin/reports_center.html', context)
 
 
 def _report_filename(report_def, fmt):

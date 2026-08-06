@@ -1,52 +1,150 @@
-{% extends "admin/base_site.html" %}
-{% load i18n static dashboard_kpis %}
+{% extends "admin/base.html" %}
+{% load i18n %}
 
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static "admin/css/dashboard.css" %}">{% endblock %}
+{% comment %}
+NOA ERP dashboard. Every card here comes from core.dashboard's registry, resolved
+per user: permission first, then the role preset, then the user's own saved
+layout. This template renders whatever survived that - it decides nothing itself.
 
-{% block coltype %}colMS{% endblock %}
+Charts use Unfold's bundled Chart.js component, which JSON.parses the data-value
+attribute, so the payload arrives already serialised from Python.
+{% endcomment %}
 
-{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+{% block title %}{% translate "Dashboard" %} | {{ site_title|default:_('NOA ERP') }}{% endblock %}
 
-{% block nav-breadcrumbs %}{% endblock %}
-
-{% block nav-sidebar %}{% endblock %}
-
-{% block content %}
-{% render_dashboard_kpis %}
-<div id="content-main" class="app-list">
-  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
-</div>
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
 {% endblock %}
 
-{% block sidebar %}
-<div id="content-related">
-    <div class="module" id="recent-actions-module">
-        <h2>{% translate 'Recent actions' %}</h2>
-        <h3>{% translate 'My actions' %}</h3>
-            {% load log %}
-            {% get_admin_log 10 as admin_log for_user user %}
-            {% if not admin_log %}
-            <p>{% translate 'None available' %}</p>
-            {% else %}
-            <ul class="actionlist">
-            {% for entry in admin_log %}
-            <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
-                <span class="visually-hidden">{% if entry.is_addition %}{% translate 'Added:' %}{% elif entry.is_change %}{% translate 'Changed:' %}{% elif entry.is_deletion %}{% translate 'Deleted:' %}{% endif %}</span>
-                {% if entry.is_deletion or not entry.get_admin_url %}
-                    {{ entry.object_repr }}
-                {% else %}
-                    <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
-                {% endif %}
-                <br>
-                {% if entry.content_type %}
-                    <span class="mini quiet">{% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}</span>
-                {% else %}
-                    <span class="mini quiet">{% translate 'Unknown content' %}</span>
-                {% endif %}
-            </li>
-            {% endfor %}
-            </ul>
+{% block content %}
+<div class="noa-dash">
+
+    <div class="noa-dash__bar">
+        <div class="noa-dash__context">
+            {% if dashboard_department %}
+                <span class="noa-chip">{{ dashboard_department }}</span>
             {% endif %}
+            <span class="noa-dash__note">
+                {% if dashboard_is_customised %}
+                    {% translate "Your personal layout" %}
+                {% else %}
+                    {% translate "Default layout for your role" %}
+                {% endif %}
+            </span>
+        </div>
+        <a href="{{ dashboard_customize_url }}" class="noa-btn">
+            <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+            {% translate "Customize" %}
+        </a>
     </div>
+
+    {% if hero_card %}
+        {% with hero=hero_card.payload %}
+        <a class="noa-hero" href="{{ hero.url }}">
+            <div>
+                <div class="noa-hero__label">{{ hero.label }}</div>
+                <div class="noa-hero__value">{{ hero.value }}</div>
+                <div class="noa-hero__detail" data-tone="{{ hero.tone }}">
+                    <span class="material-symbols-outlined" aria-hidden="true">
+                        {% if hero.tone == 'critical' %}warning{% else %}check_circle{% endif %}
+                    </span>
+                    {{ hero.detail }}
+                </div>
+            </div>
+            <div class="noa-hero__spacer"></div>
+        </a>
+        {% endwith %}
+    {% endif %}
+
+    {% if tile_cards %}
+        <div class="noa-kpi-grid">
+            {% for card in tile_cards %}
+                {% with t=card.payload %}
+                <a class="noa-tile" data-tone="{{ t.tone }}" href="{{ t.url }}">
+                    <div class="noa-tile__head">
+                        <span class="material-symbols-outlined" aria-hidden="true">{{ t.icon }}</span>
+                        <span class="noa-tile__label">{{ t.label }}</span>
+                    </div>
+                    <div class="noa-tile__value">{{ t.value }}</div>
+                    {% if t.hint %}<div class="noa-tile__hint">{{ t.hint }}</div>{% endif %}
+                </a>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if panel_cards %}
+        <div class="noa-panels">
+            {% for card in panel_cards %}
+                <div class="noa-card">
+                    <div class="noa-card__head">
+                        <span class="noa-card__title">{{ card.title }}</span>
+                    </div>
+                    <div class="noa-card__body">
+                        {% if card.kind == 'chart' %}
+                            <div class="noa-chart">
+                                <canvas class="chart"
+                                        data-type="bar"
+                                        data-value="{{ card.payload.data }}"
+                                        data-options="{{ card.payload.options }}"></canvas>
+                            </div>
+                            {% if card.payload.legend %}
+                                {% comment %}
+                                The legend restates the ramp in text, so the status
+                                colours are never the only thing telling the bars apart.
+                                {% endcomment %}
+                                <div class="noa-legend">
+                                    {% for label, colour in card.payload.legend %}
+                                        <span class="noa-legend__item">
+                                            <span class="noa-legend__swatch" style="background:{{ colour }}"></span>{{ label }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                        {% elif card.kind == 'meters' %}
+                            {% for m in card.payload %}
+                                <div class="noa-meter" data-tone="{{ m.tone }}">
+                                    <div class="noa-meter__row">
+                                        <span class="noa-meter__label">{{ m.label }}</span>
+                                        <span class="noa-meter__pct">
+                                            {% if m.pct is None %}&mdash;{% else %}{{ m.pct }}%{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="noa-meter__track"
+                                         role="progressbar"
+                                         aria-valuenow="{{ m.pct|default:0 }}"
+                                         aria-valuemin="0" aria-valuemax="100"
+                                         aria-label="{{ m.label }}">
+                                        <div class="noa-meter__fill" style="width:{{ m.pct|default:0 }}%"></div>
+                                    </div>
+                                    <div class="noa-meter__detail">{{ m.detail }}</div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if not cards %}
+        <div class="noa-card">
+            <div class="noa-card__body">
+                <p class="noa-page__lead">
+                    {% translate "There are no dashboard cards you have access to yet. Ask an administrator to grant the permissions your role needs." %}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    {# Module shortcuts, as Unfold renders them #}
+    <div class="flex flex-col lg:flex-row lg:gap-8">
+        <div class="grow">
+            {% include "unfold/helpers/app_list_default.html" %}
+        </div>
+        {% include "unfold/helpers/history.html" %}
+    </div>
+
 </div>
 {% endblock %}

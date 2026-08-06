@@ -1,41 +1,41 @@
 {% extends "admin/change_list.html" %}
 {% load i18n %}
 
-{% block object-tools-items %}
+{% comment %}
+Buttons go through Unfold's tab_action helper rather than raw <a class="button">,
+which is stock-Django markup and renders unstyled under this theme.
+
+They hang off nav-global, not object-tools-items: on a changelist that block sits
+inside nav-global-side, a plain flex div reserved for the round "+" add button, so
+<li> tab actions placed there escape the header. nav-global is the slot Unfold
+wraps in the <ul> these items expect.
+{% endcomment %}
+
+{% block nav-global %}
+    {% comment %}
+    Labels are deliberately short. This page carries five secondary actions on top
+    of Import/Export, and the full wording ("Manage Serial Numbers", "View All
+    Transactions") crowded the header enough to truncate the breadcrumb to "S..".
+    The icon plus a one-word label still reads clearly.
+    {% endcomment %}
     {% if manage_categories_url %}
-    <li>
-        <a href="{{ manage_categories_url }}" class="button">
-            {% translate "Manage Categories" %}
-        </a>
-    </li>
+        {% translate "Categories" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_categories_url icon="category" %}
     {% endif %}
     {% if view_transactions_url %}
-    <li>
-        <a href="{{ view_transactions_url }}" class="button">
-            {% translate "View All Transactions" %}
-        </a>
-    </li>
+        {% translate "Transactions" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=view_transactions_url icon="receipt_long" %}
     {% endif %}
     {% if manage_serials_url %}
-    <li>
-        <a href="{{ manage_serials_url }}" class="button">
-            {% translate "Manage Serial Numbers" %}
-        </a>
-    </li>
+        {% translate "Serials" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_serials_url icon="tag" %}
     {% endif %}
     {% if manage_pieces_url %}
-    <li>
-        <a href="{{ manage_pieces_url }}" class="button">
-            {% translate "Manage Pieces" %}
-        </a>
-    </li>
+        {% translate "Pieces" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_pieces_url icon="straighten" %}
     {% endif %}
     {% if stock_report_url %}
-    <li>
-        <a href="{{ stock_report_url }}" class="button">
-            {% translate "Print Stock Report" %}
-        </a>
-    </li>
+        {% translate "Stock Report" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=stock_report_url icon="print" %}
     {% endif %}
-    {{ block.super }}
 {% endblock %}

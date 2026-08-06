@@ -1,16 +1,60 @@
 import os
+from decimal import ROUND_HALF_UP, Decimal
+
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.staticfiles import finders
 from django.http import HttpResponseRedirect
-from import_export.admin import ImportExportModelAdmin
+from import_export.admin import ImportExportModelAdmin as BaseImportExportModelAdmin
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
+from unfold.admin import StackedInline, TabularInline
+from unfold.contrib.import_export.forms import ImportForm, SelectableFieldsExportForm
+from unfold.forms import AdminPasswordChangeForm as UnfoldAdminPasswordChangeForm
+from unfold.forms import UserChangeForm as UnfoldUserChangeForm
+from unfold.forms import UserCreationForm as UnfoldUserCreationForm
 from .models import (Company, User, CustomerProfile, Division, ProductCategory, ProductSubCategory, Product, ProductDocument, Inquiry, InquiryItem, Quotation, QuotationItem, PurchaseOrder, SalesOrder, SalesOrderItem, Invoice, InvoiceItem, Payment, AMCContract, ServiceTicket, ServiceTicketPartUsed, Employee, EmployeeFamilyMember, EmployeeDocument, OfferLetter, OfferLetterAllowance, OfferLetterFacility, Godown, StockCategory, StockSubCategory, StockItem, StockItemSerial, StockItemPiece, StockTransaction, RefillLog, Project, PurchaseRequisition, PurchaseRequisitionItem, Supplier, SupplierQuote, SupplierPurchaseOrder, SupplierPurchaseOrderItem, Equipment, EquipmentPartReplacement)
 
 # NOA ERP Custom Branding Configurations
 admin.site.site_header = "Network Office Automation ERP Software"
 admin.site.site_title = "NOA ERP Portal"
 admin.site.index_title = "Welcome to NOA ERP Command Center"
+
+
+class ImportExportModelAdmin(UnfoldModelAdmin, BaseImportExportModelAdmin):
+    """Unfold-styled base for every admin page in the system.
+
+    Every ModelAdmin here already inherited django-import-export's
+    ImportExportModelAdmin, so re-binding that one name to a subclass that also
+    mixes in Unfold's ModelAdmin re-skins the whole ERP without touching the 40+
+    class definitions below. Unfold must come first in the MRO so its templates
+    and form rendering win over import-export's.
+
+    The import/export dialogs need Unfold's own form classes, otherwise those
+    two screens render as unstyled stock Django forms.
+    """
+
+    import_form_class = ImportForm
+    export_form_class = SelectableFieldsExportForm
+
+    # Roomier default for the ERP's wide ledger-style tables.
+    list_fullwidth = True
+    compressed_fields = False
+    warn_unsaved_form = True
+
+
+def format_quantity(value):
+    """Render a stock quantity the way a person would write it.
+
+    Balances are summed from DecimalFields carrying a lot of scale, so they
+    arrive looking like 227.280000000000. Trim to two places and drop trailing
+    zeros - 227.28, and a whole number stays whole (5, not 5.00). The :f format
+    keeps large values out of scientific notation.
+    """
+    if value is None:
+        return '-'
+    trimmed = Decimal(value).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP).normalize()
+    return f'{trimmed:f}'
 
 
 class SerialSelectMediaMixin:
@@ -119,6 +163,11 @@ class CompanyAdmin(ImportExportModelAdmin):
 class CustomUserAdmin(ImportExportModelAdmin, UserAdmin):
     list_display = ('username', 'email', 'company', 'role', 'is_staff')
     list_filter = ('role', 'company', 'is_staff')
+    # Django's own auth forms render the password/permission widgets with stock
+    # admin markup; Unfold ships drop-in replacements that match the new theme.
+    form = UnfoldUserChangeForm
+    add_form = UnfoldUserCreationForm
+    change_password_form = UnfoldAdminPasswordChangeForm
     fieldsets = UserAdmin.fieldsets + (
         ('NOA ERP Multi-Tenant Info', {'fields': ('company', 'role')}),
     )
@@ -126,12 +175,12 @@ class CustomUserAdmin(ImportExportModelAdmin, UserAdmin):
         ('NOA ERP Multi-Tenant Info', {'fields': ('company', 'role')}),
     )
 
-class EmployeeFamilyMemberInline(admin.TabularInline):
+class EmployeeFamilyMemberInline(TabularInline):
     model = EmployeeFamilyMember
     fields = ('name', 'relation', 'date_of_birth', 'contact_number')
     extra = 1
 
-class EmployeeDocumentInline(admin.TabularInline):
+class EmployeeDocumentInline(TabularInline):
     model = EmployeeDocument
     fields = ('document_type', 'file', 'uploaded_at')
     readonly_fields = ('uploaded_at',)
@@ -157,14 +206,14 @@ class EmployeeAdmin(ImportExportModelAdmin):
     )
 
 
-class OfferLetterAllowanceInline(admin.TabularInline):
+class OfferLetterAllowanceInline(TabularInline):
     model = OfferLetterAllowance
     extra = 1
     verbose_name = "Allowance"
     verbose_name_plural = "Allowances (add as many rows as needed - name and amount are both editable)"
 
 
-class OfferLetterFacilityInline(admin.TabularInline):
+class OfferLetterFacilityInline(TabularInline):
     model = OfferLetterFacility
     extra = 1
     verbose_name = "Other Facility"
@@ -268,7 +317,7 @@ class CustomerProfileAdmin(ImportExportModelAdmin):
     list_filter = ('company',)
     search_fields = ('business_name', 'user__username')
 
-class ProductDocumentInline(admin.TabularInline):
+class ProductDocumentInline(TabularInline):
     model = ProductDocument
     fields = ('title', 'document_type', 'division', 'category', 'subcategory', 'product', 'file')
     extra = 1
@@ -276,7 +325,7 @@ class ProductDocumentInline(admin.TabularInline):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('division', 'category', 'subcategory', 'product')
 
-class ProductCategoryInline(admin.TabularInline):
+class ProductCategoryInline(TabularInline):
     """Manage a Division's Product Categories directly on the Division page."""
     model = ProductCategory
     fields = ('name', 'description')
@@ -293,7 +342,7 @@ class DivisionAdmin(ImportExportModelAdmin):
         return obj.productcategory_set.count()
     get_category_count.short_description = 'Product Categories'
 
-class ProductSubCategoryInline(admin.TabularInline):
+class ProductSubCategoryInline(TabularInline):
     """Manage a Category's Sub-Categories directly on the Product Category page."""
     model = ProductSubCategory
     fields = ('name', 'description')
@@ -316,7 +365,7 @@ class ProductCategoryAdmin(ImportExportModelAdmin):
         return obj.subcategories.count()
     get_subcategory_count.short_description = 'Sub-Categories'
 
-class ProductInline(admin.TabularInline):
+class ProductInline(TabularInline):
     """See/manage a Sub-Category's Products directly on the Sub-Category page."""
     model = Product
     fk_name = 'subcategory'
@@ -402,7 +451,7 @@ class ProductDocumentAdmin(ImportExportModelAdmin):
     download_link.short_description = "Download"
     download_link.allow_tags = True
 
-class InquiryItemInline(admin.TabularInline):
+class InquiryItemInline(TabularInline):
     model = InquiryItem
     fields = ('division', 'category', 'subcategory', 'product', 'quantity')
     extra = 1
@@ -421,7 +470,7 @@ class InquiryAdmin(ImportExportModelAdmin):
         }),
     )
 
-class QuotationItemInline(admin.TabularInline):
+class QuotationItemInline(TabularInline):
     model = QuotationItem
     fields = ('division', 'category', 'subcategory', 'product', 'quantity', 'unit_price')
     extra = 1
@@ -514,7 +563,7 @@ class SalesOrderSeriesAdmin(ImportExportModelAdmin):
     list_display = ('name', 'prefix', 'next_number', 'is_active', 'company')
     list_filter = ('company', 'is_active')
 
-class SalesOrderItemInline(admin.TabularInline):
+class SalesOrderItemInline(TabularInline):
     model = SalesOrderItem
     fields = ('division', 'category', 'subcategory', 'product', 'quantity', 'unit_price')
     extra = 0
@@ -565,12 +614,12 @@ class SalesOrderAdmin(ImportExportModelAdmin):
 class InvoiceSeriesAdmin(ImportExportModelAdmin):
     list_display = ('name', 'prefix', 'next_number', 'company')
 
-class InvoiceItemInline(admin.TabularInline):
+class InvoiceItemInline(TabularInline):
     model = InvoiceItem
     fields = ('division', 'category', 'subcategory', 'product', 'quantity', 'unit_price')
     extra = 1
 
-class PaymentInline(admin.TabularInline):
+class PaymentInline(TabularInline):
     model = Payment
     extra = 0
 
@@ -661,7 +710,7 @@ class AMCContractAdmin(ImportExportModelAdmin):
 
 # ── Equipment (Asset Register) ──────────────────────────────
 
-class EquipmentPartReplacementInline(admin.TabularInline):
+class EquipmentPartReplacementInline(TabularInline):
     """Replacing a part keeps the same Asset record - this logs what was swapped, when, and under what coverage."""
     model = EquipmentPartReplacement
     fields = ('stock_item', 'quantity', 'replaced_under', 'service_ticket', 'notes')
@@ -728,7 +777,7 @@ class EquipmentAdmin(ImportExportModelAdmin):
 
 # ── Service Ticket ───────────────────────────────────────────
 
-class ServiceTicketPartUsedInline(admin.TabularInline):
+class ServiceTicketPartUsedInline(TabularInline):
     model = ServiceTicketPartUsed
     fields = ('stock_item', 'quantity', 'notes')
     extra = 0
@@ -835,7 +884,7 @@ class GodownAdmin(ImportExportModelAdmin):
         }),
     )
 
-class StockSubCategoryInline(admin.TabularInline):
+class StockSubCategoryInline(TabularInline):
     model = StockSubCategory
     fields = ('name', 'is_active')
     extra = 1
@@ -879,7 +928,7 @@ class StockItemAdmin(ImportExportModelAdmin):
     )
 
     def get_total_stock(self, obj):
-        total = obj.get_stock_balance()
+        total = format_quantity(obj.get_stock_balance())
         if not obj.is_piece_tracked:
             return total
         pieces = obj.pieces.filter(status='in_stock').order_by('-quantity')
@@ -887,7 +936,7 @@ class StockItemAdmin(ImportExportModelAdmin):
             return total
         pieces_html = format_html_join(
             ', ', '{}: {}',
-            ((p.label, p.quantity) for p in pieces)
+            ((p.label, format_quantity(p.quantity)) for p in pieces)
         )
         return format_html('{} {} <span style="color:#666; font-size:11px;">({} pieces - {})</span>', total, obj.get_unit_display(), pieces.count(), pieces_html)
     get_total_stock.short_description = 'Total Stock (All Godowns)'
@@ -1052,7 +1101,7 @@ class PendingReturnableItemsAdmin(ImportExportModelAdmin):
 # Project Department
 # ─────────────────────────────────────────────────────────────
 
-class PurchaseRequisitionItemInline(admin.TabularInline):
+class PurchaseRequisitionItemInline(TabularInline):
     model = PurchaseRequisitionItem
     fields = ('stock_item', 'quantity', 'get_current_stock_display', 'get_shortfall_display', 'get_recommended_purchase_display', 'notes')
     readonly_fields = ('get_current_stock_display', 'get_shortfall_display', 'get_recommended_purchase_display')
@@ -1178,7 +1227,7 @@ class ItemsToIssueAdmin(ImportExportModelAdmin):
     mark_issued.short_description = "Mark selected as Issued from Stock"
 
 
-class SupplierQuoteInline(admin.TabularInline):
+class SupplierQuoteInline(TabularInline):
     """Price comparison: log quotes from multiple suppliers for this item, then mark the winner."""
     model = SupplierQuote
     fk_name = 'purchase_requisition_item'
@@ -1237,7 +1286,7 @@ class ItemsToPurchaseAdmin(ImportExportModelAdmin):
 # Purchase Order (to Supplier)
 # ─────────────────────────────────────────────────────────────
 
-class SupplierPurchaseOrderItemInline(admin.TabularInline):
+class SupplierPurchaseOrderItemInline(TabularInline):
     model = SupplierPurchaseOrderItem
     fields = ('requisition_item', 'stock_item', 'quantity', 'unit_price', 'get_line_total_display')
     readonly_fields = ('get_line_total_display',)

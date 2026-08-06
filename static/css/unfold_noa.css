@@ -1,0 +1,729 @@
+/* ============================================================
+   NOA ERP — Unfold theme extensions
+   ------------------------------------------------------------
+   Written as plain CSS against Unfold's own custom properties
+   (--color-base-*, --color-primary-*) rather than Tailwind utility
+   classes, because only the utilities Unfold itself uses are present
+   in its compiled bundle - anything else would silently render
+   unstyled. Dark mode rides on the `.dark` class Unfold puts on <html>.
+   ============================================================ */
+
+:root {
+    /* Status marks. Fixed, validated palette - these four are the ones used on
+       chart marks and tile icons. Red and green are never adjacent marks in the
+       same chart; amber always separates them (deuteranopia ΔE 4.1 otherwise). */
+    --noa-critical: #d03b3b;
+    --noa-warning: #fab219;
+    --noa-good: #0ca30c;
+    --noa-neutral: #898781;
+
+    /* Text-weight variants. The mark colours above are tuned for fills against
+       a surface, not for small text - amber at 1.83:1 and green at 3.27:1 both
+       fail body-text contrast on white, so text uses darker steps of the same
+       hues. */
+    --noa-critical-text: #b3312f;
+    --noa-warning-text: #935f00;
+    --noa-good-text: #006300;
+}
+
+.dark {
+    --noa-critical-text: #e66767;
+    --noa-warning-text: #fab219;
+    --noa-good-text: #0ca30c;
+}
+
+/* ── Dashboard shell ────────────────────────────────────────── */
+
+.noa-dash {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* ── Dashboard context bar ──────────────────────────────────── */
+
+.noa-dash__bar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.noa-dash__context {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+
+.noa-dash__note {
+    font-size: .8125rem;
+    color: var(--color-base-500);
+}
+
+.dark .noa-dash__note {
+    color: var(--color-base-400);
+}
+
+.noa-dash__bar .noa-btn {
+    margin-left: auto;
+}
+
+.noa-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .01em;
+}
+
+.dark .noa-chip {
+    background: color-mix(in oklab, var(--color-primary-500) 22%, transparent);
+    color: var(--color-primary-200);
+}
+
+/* ── Customize dashboard list ───────────────────────────────── */
+
+.noa-sortable {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.noa-sortable__item {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .75rem .9rem;
+    border: 1px solid var(--color-base-200);
+    border-radius: 8px;
+    background: #fff;
+    cursor: grab;
+}
+
+.dark .noa-sortable__item {
+    border-color: var(--color-base-800);
+    background: var(--color-base-900);
+}
+
+.noa-sortable__item.is-dragging {
+    opacity: .5;
+    border-style: dashed;
+}
+
+.noa-sortable__handle {
+    color: var(--color-base-400);
+    flex: none;
+    margin-top: .1rem;
+}
+
+.noa-sortable__label {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    flex: 1 1 auto;
+    cursor: pointer;
+}
+
+.noa-sortable__label input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin-top: .15rem;
+    accent-color: var(--color-primary-600);
+    flex: none;
+}
+
+.noa-sortable__title {
+    display: block;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--color-base-800);
+}
+
+.dark .noa-sortable__title {
+    color: var(--color-base-100);
+}
+
+.noa-sortable__desc {
+    display: block;
+    margin-top: .15rem;
+    font-size: .78125rem;
+    line-height: 1.45;
+    color: var(--color-base-500);
+}
+
+.dark .noa-sortable__desc {
+    color: var(--color-base-400);
+}
+
+.noa-sortable__kind {
+    flex: none;
+    align-self: center;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    background: var(--color-base-100);
+    color: var(--color-base-500);
+    font-size: .6875rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.dark .noa-sortable__kind {
+    background: var(--color-base-800);
+    color: var(--color-base-400);
+}
+
+/* ── Hero figure ────────────────────────────────────────────── */
+
+.noa-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1.5rem;
+    padding: 1.75rem;
+    border: 1px solid var(--color-base-200);
+    border-radius: 10px;
+    background:
+        radial-gradient(120% 140% at 100% 0%, color-mix(in oklab, var(--color-primary-600) 12%, transparent) 0%, transparent 55%),
+        var(--color-base-50);
+}
+
+.dark .noa-hero {
+    border-color: var(--color-base-800);
+    background:
+        radial-gradient(120% 140% at 100% 0%, color-mix(in oklab, var(--color-primary-500) 18%, transparent) 0%, transparent 55%),
+        var(--color-base-900);
+}
+
+.noa-hero__label {
+    font-size: .8125rem;
+    font-weight: 500;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: var(--color-base-500);
+}
+
+.dark .noa-hero__label {
+    color: var(--color-base-400);
+}
+
+.noa-hero__value {
+    font-size: 3rem;
+    line-height: 1.05;
+    font-weight: 700;
+    margin-top: .35rem;
+    color: var(--color-base-900);
+}
+
+.dark .noa-hero__value {
+    color: #fff;
+}
+
+.noa-hero__detail {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .5rem;
+    font-size: .875rem;
+    color: var(--color-base-600);
+}
+
+.dark .noa-hero__detail {
+    color: var(--color-base-300);
+}
+
+.noa-hero__detail .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+.noa-hero__detail[data-tone="critical"] { color: var(--noa-critical-text); }
+.noa-hero__detail[data-tone="good"] { color: var(--noa-good-text); }
+
+.noa-hero__spacer { flex: 1 1 auto; }
+
+/* ── KPI tiles ──────────────────────────────────────────────── */
+
+.noa-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1rem;
+}
+
+.noa-tile {
+    position: relative;
+    display: block;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--color-base-200);
+    border-radius: 10px;
+    background: #fff;
+    text-decoration: none;
+    overflow: hidden;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.dark .noa-tile {
+    border-color: var(--color-base-800);
+    background: var(--color-base-900);
+}
+
+.noa-tile:hover {
+    border-color: var(--color-base-300);
+    box-shadow: 0 6px 18px rgb(15 23 42 / .08);
+    transform: translateY(-1px);
+}
+
+.dark .noa-tile:hover {
+    border-color: var(--color-base-700);
+    box-shadow: 0 6px 18px rgb(0 0 0 / .45);
+}
+
+/* The 3px rail is the tile's status cue - it is always paired with the icon
+   and the label below, so colour never carries the meaning by itself. */
+.noa-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--noa-neutral);
+}
+
+.noa-tile[data-tone="critical"]::before { background: var(--noa-critical); }
+.noa-tile[data-tone="warning"]::before { background: var(--noa-warning); }
+.noa-tile[data-tone="good"]::before { background: var(--noa-good); }
+.noa-tile[data-tone="neutral"]::before { background: var(--color-primary-600); }
+
+.noa-tile__head {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.noa-tile__head .material-symbols-outlined {
+    font-size: 1.25rem;
+    color: var(--color-base-400);
+}
+
+.noa-tile[data-tone="critical"] .material-symbols-outlined { color: var(--noa-critical-text); }
+.noa-tile[data-tone="warning"] .material-symbols-outlined { color: var(--noa-warning-text); }
+.noa-tile[data-tone="good"] .material-symbols-outlined { color: var(--noa-good-text); }
+
+.noa-tile__label {
+    font-size: .8125rem;
+    font-weight: 500;
+    color: var(--color-base-600);
+}
+
+.dark .noa-tile__label {
+    color: var(--color-base-300);
+}
+
+.noa-tile__value {
+    margin-top: .5rem;
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-base-900);
+}
+
+.dark .noa-tile__value {
+    color: #fff;
+}
+
+.noa-tile__hint {
+    margin-top: .2rem;
+    font-size: .78125rem;
+    color: var(--color-base-500);
+}
+
+.dark .noa-tile__hint {
+    color: var(--color-base-400);
+}
+
+/* ── Panels / cards ─────────────────────────────────────────── */
+
+.noa-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.noa-card {
+    border: 1px solid var(--color-base-200);
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.dark .noa-card {
+    border-color: var(--color-base-800);
+    background: var(--color-base-900);
+}
+
+.noa-card__head {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .875rem 1.1rem;
+    border-bottom: 1px solid var(--color-base-200);
+}
+
+.dark .noa-card__head {
+    border-color: var(--color-base-800);
+}
+
+.noa-card__title {
+    font-size: .9375rem;
+    font-weight: 600;
+    color: var(--color-base-900);
+}
+
+.dark .noa-card__title {
+    color: #fff;
+}
+
+.noa-card__body {
+    padding: 1.1rem;
+}
+
+.noa-chart {
+    position: relative;
+    height: 240px;
+}
+
+/* ── Department meters ──────────────────────────────────────── */
+
+.noa-meter + .noa-meter {
+    margin-top: 1.05rem;
+}
+
+.noa-meter__row {
+    display: flex;
+    align-items: baseline;
+    gap: .5rem;
+    margin-bottom: .4rem;
+}
+
+.noa-meter__label {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--color-base-800);
+}
+
+.dark .noa-meter__label {
+    color: var(--color-base-100);
+}
+
+.noa-meter__pct {
+    margin-left: auto;
+    font-size: .875rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.noa-meter[data-tone="critical"] .noa-meter__pct { color: var(--noa-critical-text); }
+.noa-meter[data-tone="warning"] .noa-meter__pct { color: var(--noa-warning-text); }
+.noa-meter[data-tone="good"] .noa-meter__pct { color: var(--noa-good-text); }
+.noa-meter[data-tone="neutral"] .noa-meter__pct { color: var(--color-base-500); }
+
+.noa-meter__track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-base-200);
+    overflow: hidden;
+}
+
+.dark .noa-meter__track {
+    background: var(--color-base-800);
+}
+
+.noa-meter__fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--noa-neutral);
+}
+
+.noa-meter[data-tone="critical"] .noa-meter__fill { background: var(--noa-critical); }
+.noa-meter[data-tone="warning"] .noa-meter__fill { background: var(--noa-warning); }
+.noa-meter[data-tone="good"] .noa-meter__fill { background: var(--noa-good); }
+
+.noa-meter__detail {
+    margin-top: .35rem;
+    font-size: .78125rem;
+    color: var(--color-base-500);
+}
+
+.dark .noa-meter__detail {
+    color: var(--color-base-400);
+}
+
+/* Legend for the status ramp, so a chart's colours are never the only cue. */
+.noa-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 1.1rem;
+    margin-top: .9rem;
+    padding-top: .85rem;
+    border-top: 1px solid var(--color-base-200);
+}
+
+.dark .noa-legend {
+    border-color: var(--color-base-800);
+}
+
+.noa-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .78125rem;
+    color: var(--color-base-600);
+}
+
+.dark .noa-legend__item {
+    color: var(--color-base-300);
+}
+
+.noa-legend__swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex: none;
+}
+
+/* ── Standalone forms (Reports Center, email/share screens) ─────
+   These pages are hand-built views rather than ModelAdmin forms, so they don't
+   inherit Unfold's form rendering and need their own field styling. */
+
+.noa-page {
+    max-width: 760px;
+}
+
+.noa-page__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-base-900);
+    margin: 0;
+}
+
+.dark .noa-page__title {
+    color: #fff;
+}
+
+.noa-page__lead {
+    margin: .4rem 0 0;
+    font-size: .875rem;
+    color: var(--color-base-500);
+}
+
+.dark .noa-page__lead {
+    color: var(--color-base-400);
+}
+
+.noa-field + .noa-field {
+    margin-top: 1.1rem;
+}
+
+.noa-field__label {
+    display: block;
+    margin-bottom: .35rem;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--color-base-700);
+}
+
+.dark .noa-field__label {
+    color: var(--color-base-200);
+}
+
+.noa-input,
+.noa-select {
+    width: 100%;
+    padding: .55rem .75rem;
+    border: 1px solid var(--color-base-200);
+    border-radius: 6px;
+    background-color: #fff;
+    color: var(--color-base-800);
+    font-size: .875rem;
+    line-height: 1.4;
+}
+
+.dark .noa-input,
+.dark .noa-select {
+    border-color: var(--color-base-700);
+    background-color: var(--color-base-900);
+    color: var(--color-base-100);
+}
+
+.noa-input:focus,
+.noa-select:focus {
+    outline: none;
+    border-color: var(--color-primary-600);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary-600) 20%, transparent);
+}
+
+.noa-field__row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+
+.noa-field__help {
+    margin: .4rem 0 0;
+    font-size: .78125rem;
+    line-height: 1.5;
+    color: var(--color-base-500);
+}
+
+.dark .noa-field__help {
+    color: var(--color-base-400);
+}
+
+.noa-check {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .875rem;
+    color: var(--color-base-700);
+    cursor: pointer;
+}
+
+.dark .noa-check {
+    color: var(--color-base-200);
+}
+
+.noa-check input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-primary-600);
+}
+
+textarea.noa-input {
+    resize: vertical;
+    min-height: 5rem;
+}
+
+.noa-field__row .noa-input {
+    width: auto;
+    flex: 1 1 10rem;
+}
+
+.noa-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-base-200);
+}
+
+.dark .noa-actions {
+    border-color: var(--color-base-800);
+}
+
+.noa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem 1rem;
+    border: 1px solid var(--color-base-200);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--color-base-700);
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+.dark .noa-btn {
+    border-color: var(--color-base-700);
+    background: var(--color-base-900);
+    color: var(--color-base-100);
+}
+
+.noa-btn:hover {
+    background: var(--color-base-50);
+}
+
+.dark .noa-btn:hover {
+    background: var(--color-base-800);
+}
+
+.noa-btn--primary {
+    border-color: var(--color-primary-600);
+    background: var(--color-primary-600);
+    color: #fff;
+}
+
+.noa-btn--primary:hover {
+    background: var(--color-primary-700);
+    border-color: var(--color-primary-700);
+}
+
+.dark .noa-btn--primary {
+    border-color: var(--color-primary-600);
+    background: var(--color-primary-600);
+    color: #fff;
+}
+
+.noa-btn .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+/* ── django-smart-selects chained dropdowns ─────────────────────
+   Unfold has no integration for smart_selects, so the ~28 chained
+   ForeignKey widgets in core/models.py render as bare browser selects.
+   These rules give them the same shape as Unfold's own inputs. */
+
+select.chained-fk,
+.field-box select[data-chainfield],
+select[data-chainfield] {
+    width: 100%;
+    padding: .5rem .75rem;
+    border: 1px solid var(--color-base-200);
+    border-radius: var(--radius-default, 6px);
+    background-color: #fff;
+    color: var(--color-base-700);
+    font-size: .875rem;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgb(15 23 42 / .04);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .55rem center;
+    background-size: 1.1rem;
+    padding-right: 2rem;
+}
+
+select.chained-fk:focus,
+select[data-chainfield]:focus {
+    outline: none;
+    border-color: var(--color-primary-600);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary-600) 20%, transparent);
+}
+
+.dark select.chained-fk,
+.dark select[data-chainfield] {
+    border-color: var(--color-base-700);
+    background-color: var(--color-base-900);
+    color: var(--color-base-200);
+}
+
+/* ── Print ──────────────────────────────────────────────────── */
+
+@media print {
+    .noa-tile,
+    .noa-card,
+    .noa-hero {
+        break-inside: avoid;
+    }
+}

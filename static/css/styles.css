@@ -1,5 +1,8 @@
 /* NOA ERP — Customer Portal
-   Dark navy / teal glassmorphism theme (matches the Futurol Academy reference) */
+   Dark navy theme, sharing the admin console's indigo brand accent and the same
+   status colours, so the portal a customer sees and the console staff work in
+   read as one product. Indigo is taken from the NOA logo itself; the accent is
+   stepped light enough (indigo-400) to stay legible on the near-black base. */
 
 :root {
     --bg-base: #020617;
@@ -13,17 +16,19 @@
     --text-secondary: #cbd5e1;
     --text-muted: #94a3b8;
 
-    --accent: #14b8a6;
-    --accent-hover: #0d9488;
-    --accent-fg: #020617;
-    --accent-soft: rgba(20, 184, 166, 0.15);
+    --accent: #818cf8;
+    --accent-hover: #6366f1;
+    --accent-fg: #0b1020;
+    --accent-soft: rgba(129, 140, 248, 0.15);
 
-    --amber: #f59e0b;
-    --amber-soft: rgba(245, 158, 11, 0.15);
-    --success: #10b981;
-    --success-soft: rgba(16, 185, 129, 0.15);
-    --danger: #ef4444;
-    --danger-soft: rgba(239, 68, 68, 0.15);
+    /* Same status steps the admin console uses, so "overdue" or "resolved" is
+       the same colour wherever a customer or a staff member sees it. */
+    --amber: #fab219;
+    --amber-soft: rgba(250, 178, 25, 0.15);
+    --success: #0ca30c;
+    --success-soft: rgba(12, 163, 12, 0.15);
+    --danger: #d03b3b;
+    --danger-soft: rgba(208, 59, 59, 0.15);
 
     --radius-sm: 8px;
     --radius-md: 16px;

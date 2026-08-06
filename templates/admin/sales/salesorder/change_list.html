@@ -1,13 +1,15 @@
 {% extends "admin/change_list.html" %}
 {% load i18n %}
 
-{% block object-tools-items %}
+{% comment %}
+Secondary actions hang off nav-global rather than object-tools-items: on a
+changelist that block sits inside nav-global-side, a flex div reserved for the
+round "+" add button, so <li> tab actions placed there escape the header.
+{% endcomment %}
+
+{% block nav-global %}
     {% if format_management_url %}
-    <li>
-        <a href="{{ format_management_url }}" class="button">
-            {% translate "Sales Order Format Management" %}
-        </a>
-    </li>
+        {% translate "Sales Order Format Management" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=format_management_url icon="tune" %}
     {% endif %}
-    {{ block.super }}
 {% endblock %}

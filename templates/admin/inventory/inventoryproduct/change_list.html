@@ -1,18 +1,21 @@
 {% extends "admin/change_list.html" %}
 {% load i18n %}
 
-{% block object-tools-items %}
+{% block nav-global %}
     {% if manage_divisions_url %}
-    <li><a href="{{ manage_divisions_url }}" class="button">{% translate "Divisions" %}</a></li>
+        {% translate "Divisions" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_divisions_url icon="account_tree" %}
     {% endif %}
     {% if manage_product_categories_url %}
-    <li><a href="{{ manage_product_categories_url }}" class="button">{% translate "Product Categories" %}</a></li>
+        {% translate "Product Categories" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_product_categories_url icon="category" %}
     {% endif %}
     {% if manage_product_subcategories_url %}
-    <li><a href="{{ manage_product_subcategories_url }}" class="button">{% translate "Sub-Categories" %}</a></li>
+        {% translate "Sub-Categories" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_product_subcategories_url icon="subdirectory_arrow_right" %}
     {% endif %}
     {% if manage_product_documents_url %}
-    <li><a href="{{ manage_product_documents_url }}" class="button">{% translate "Documents" %}</a></li>
+        {% translate "Documents" as title %}
+        {% include "unfold/helpers/tab_action.html" with title=title link=manage_product_documents_url icon="description" %}
     {% endif %}
-    {{ block.super }}
 {% endblock %}
